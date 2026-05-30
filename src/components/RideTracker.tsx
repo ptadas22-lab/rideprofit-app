@@ -296,21 +296,21 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
   const estimatedFuelCost = ((distanceKm + deadKm) / (vehicle.mileage || 1)) * vehicle.fuelPrice;
 
   return (
-    <div className="space-y-6" id="ride_tracker_cockpit">
-      {/* Platform & Simulation Quick Settings Band */}
-      <div className="bg-zinc-900/50 border border-zinc-800/80 text-zinc-105 p-4 rounded-xl flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center shadow-md animate-slideUp" id="platform_control_row">
+    <div className="space-y-4" id="ride_tracker_cockpit">
+      {/* App & Fake GPS Controls */}
+      <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col gap-4 shadow-sm" id="platform_control_row">
         <div>
-          <label className="text-[10px] font-bold tracking-widest text-green-400 uppercase">Operating Platform</label>
-          <div className="flex flex-wrap gap-1.5 mt-1.5" id="platform_pills">
+          <label className="text-xs font-black text-green-400 uppercase tracking-wider">Which App are you using?</label>
+          <div className="flex flex-wrap gap-2 mt-2" id="platform_pills">
             {(['Uber', 'Ola', 'Rapido', 'Yandex', 'Custom', 'Personal'] as const).map((p) => (
               <button
                 key={p}
                 disabled={isTracking}
                 onClick={() => { triggerClick(); setPlatform(p); }}
-                className={`py-1.5 px-3 rounded-lg text-xs font-bold cursor-pointer transition-all duration-150 ${
+                className={`py-2.5 px-4 rounded-lg text-sm font-black cursor-pointer transition-all ${
                   platform === p 
-                    ? 'bg-green-500 text-zinc-950 shadow-[0_0_10px_rgba(34,197,94,0.25)] font-black scale-102' 
-                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-750 disabled:opacity-40 border border-zinc-700/50'
+                    ? 'bg-green-500 text-black shadow-md' 
+                    : 'bg-zinc-900 text-zinc-400 border border-zinc-800 disabled:opacity-30'
                 }`}
               >
                 {p}
@@ -320,116 +320,106 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         </div>
 
         {/* GPS Simulation Switch */}
-        <div className="border-t sm:border-t-0 sm:border-l border-zinc-800 pt-3 sm:pt-0 sm:pl-4 flex flex-col justify-center">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-green-400 animate-pulse" /> Mock GPS Drive
-              </span>
-              <p className="text-[10px] text-zinc-500">Enable to test GPS inside browser</p>
-            </div>
-            <button
-              onClick={() => { triggerClick(); setUseSimulation(!useSimulation); }}
-              className={`w-12 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors duration-150 ${
-                useSimulation ? 'bg-green-500' : 'bg-zinc-800'
-              }`}
-            >
-              <div
-                className={`bg-zinc-100 w-5 h-5 rounded-full shadow transition-transform duration-150 ${
-                  useSimulation ? 'translate-x-[24px]' : 'translate-x-0'
-                }`}
-              />
-            </button>
+        <div className="border-t border-zinc-900 pt-3 flex items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-black text-zinc-300 flex items-center gap-1">
+              <Sparkles className="w-4 h-4 text-green-400" /> Test App Indoors (Fake GPS)
+            </span>
+            <p className="text-[11px] text-zinc-500">Turn on to test how the GPS works without driving</p>
           </div>
+          <button
+            onClick={() => { triggerClick(); setUseSimulation(!useSimulation); }}
+            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+              useSimulation ? 'bg-green-500' : 'bg-zinc-800'
+            }`}
+          >
+            <div
+              className={`bg-white w-5 h-5 rounded-full shadow transition-transform ${
+                useSimulation ? 'translate-x-[28px]' : 'translate-x-0'
+              }`}
+            />
+          </button>
         </div>
       </div>
 
       {/* Main HUD (Heads-Up Display) Panel */}
-      <div className="p-6 bg-zinc-900/30 text-zinc-100 rounded-xl border border-zinc-800/80 shadow-lg relative overflow-hidden" id="navigation_hud_display">
-        {/* Glow vector backdrops */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-green-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="p-5 bg-zinc-950 text-white rounded-xl border border-zinc-900 shadow-md relative overflow-hidden" id="navigation_hud_display">
         {isTracking && (
-          <div className="absolute top-4 right-4 flex items-center gap-1.5 py-1 px-2.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md text-[9px] font-bold tracking-widest uppercase animate-pulse">
-            <Activity className="w-3.5 h-3.5" /> LIVE TRACKING
+          <div className="absolute top-4 right-4 flex items-center gap-1 py-1 px-2.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded text-[10px] font-black uppercase tracking-widest animate-pulse">
+            <Activity className="w-3.5 h-3.5" /> DRIVING NOW
           </div>
         )}
 
         {/* HUD Grid Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-2" id="live_metrics_scrow">
+        <div className="grid grid-cols-2 gap-4 pt-2" id="live_metrics_scrow">
           {/* Active Ride Distance */}
-          <div className="space-y-1">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
-              <Navigation className="w-3.5 h-3.5 text-green-400" /> Active Distance
+          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
+            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+              <Navigation className="w-4 h-4 text-green-400" /> Earning KM
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-50 font-mono glow-green">
+              <span className="text-3xl sm:text-4xl font-black text-white font-mono glow-green">
                 {distanceKm.toFixed(2)}
               </span>
-              <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">km</span>
+              <span className="text-xs text-zinc-500 font-bold">KM</span>
             </div>
-            <p className="text-[10px] text-zinc-500">Paid fare kilometers</p>
+            <p className="text-[10px] text-zinc-500">With customer</p>
           </div>
 
-          {/* Unpaid Dead Distance. Highly visible amber alert for cabbies */}
-          <div className="space-y-1">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
-              <MapPinOff className="w-3.5 h-3.5 text-amber-500" /> Dead Distance
+          {/* Unpaid Dead Distance */}
+          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
+            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+              <MapPinOff className="w-4 h-4 text-amber-500" /> Non-Earning KM
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-500 font-mono">
+              <span className="text-3xl sm:text-4xl font-black text-amber-500 font-mono">
                 {deadKm.toFixed(2)}
               </span>
-              <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">km</span>
+              <span className="text-xs text-zinc-500 font-bold">KM</span>
             </div>
-            <p className="text-[10px] text-amber-500/70">Cruising without passenger</p>
+            <p className="text-[10px] text-amber-500/70">Without customer</p>
           </div>
 
           {/* Travel Duration */}
-          <div className="space-y-1">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
-              <Timer className="w-3.5 h-3.5 text-emerald-450" /> Timer Seconds
+          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
+            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+              <Timer className="w-4 h-4 text-emerald-400" /> Ride Time
             </span>
             <div className="pt-1">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-zinc-200 block py-0.5">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 block">
                 {formatDuration(durationSeconds)}
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500">Log elapsed time</p>
+            <p className="text-[10px] text-zinc-500">Time spent so far</p>
           </div>
 
           {/* estimated fuel cost overlay */}
-          <div className="space-y-1">
-            <span className="text-[10px] text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 font-bold">
-              <Compass className="w-3.5 h-3.5 text-red-400" /> Est Fuel Burned
+          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
+            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+              <Compass className="w-4 h-4 text-red-400" /> Fuel Cost
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-red-400 font-mono">
+              <span className="text-3xl sm:text-4xl font-black text-red-500 font-mono">
                 {currency}{estimatedFuelCost.toFixed(2)}
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500">Based on {vehicle.mileage}km yield</p>
+            <p className="text-[10px] text-zinc-500">Calculated fuel loss</p>
           </div>
         </div>
 
         {/* GPS Satellite Connectivity Bar */}
-        <div className="border-t border-zinc-800/80 mt-6 pt-4 flex flex-wrap justify-between items-center gap-4 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isTracking ? 'bg-green-500 animate-ping' : 'bg-zinc-650'}`}></div>
+        <div className="border-t border-zinc-900 mt-4 pt-3 flex flex-wrap justify-between items-center gap-2 text-[10px] uppercase font-black tracking-wider text-zinc-500">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2.5 h-2.5 rounded-full ${isTracking ? 'bg-green-500 animate-ping' : 'bg-zinc-800'}`}></div>
             <span>
               {isTracking 
-                ? (useSimulation ? `Simulated Speed: ${simulationSpeed} km/h` : `Real GPS: Satellite Active`) 
-                : 'GPS receiver idle'}
+                ? (useSimulation ? `Faking Speed: ${simulationSpeed} km/h` : `GPS is ON`) 
+                : 'GPS is OFF'}
             </span>
-            {gpsAccuracy && (
-              <span className="bg-zinc-800 px-2 py-0.5 rounded text-[9px] text-green-400 font-mono">
-                ACCURACY: ±{gpsAccuracy.toFixed(0)}M
-              </span>
-            )}
           </div>
 
           {geoError && (
-            <div className="flex items-center gap-1.5 bg-red-950/20 text-red-400 px-2.5 py-1 rounded-md border border-red-500/20 text-[9px]">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-red-400 text-[10px] font-bold">
               <span>{geoError}</span>
             </div>
           )}
@@ -437,58 +427,57 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
         {/* Speed limit Controls inside simulation */}
         {isTracking && useSimulation && (
-          <div className="mt-4 p-3 bg-zinc-950/50 border border-zinc-800/80 rounded-xl flex flex-wrap gap-2 items-center">
-            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Sim Speed Control:</span>
+          <div className="mt-3 p-2 bg-zinc-900 border border-zinc-850 rounded-lg flex flex-wrap gap-1.5 items-center">
+            <span className="text-[10px] font-black text-zinc-400 uppercase">Speed:</span>
             {[25, 45, 80].map(speed => (
               <button
                 key={speed}
                 onClick={() => { triggerClick(); setSimulationSpeed(speed); }}
-                className={`py-1 px-3 text-[10px] font-bold rounded-md cursor-pointer transition-all ${
+                className={`py-1 px-2.5 text-xs font-black rounded cursor-pointer transition-all ${
                   simulationSpeed === speed 
-                    ? 'bg-green-500 text-zinc-950 font-black' 
-                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/40'
+                    ? 'bg-green-500 text-black' 
+                    : 'bg-zinc-800 text-zinc-400'
                 }`}
               >
-                {speed === 25 ? '🏍️ 25km/h Auto' : speed === 45 ? '🚗 45km/h City' : '✈️ 80km/h Hwy'}
+                {speed === 25 ? '🏍️ 25km/h' : speed === 45 ? '🚗 45km/h' : '✈️ 80km/h'}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Dynamic tactile controller panel (Super simple on-the-road buttons) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4" id="tactile_hud_actions">
+      {/* TACTILE COCKPIT CONTROLS - GIANT TOUCH TARGETS */}
+      <div className="flex flex-col gap-3" id="tactile_hud_actions">
         
-        {/* ACTIVE DRIVING COCKPIT CONTROLS */}
-        <div className="md:col-span-8 flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {!isTracking ? (
             <button
               onClick={handleStartTracking}
-              className="w-full py-6 md:py-8 bg-green-500 hover:bg-green-400 active:scale-98 text-zinc-950 rounded-xl font-black text-xl sm:text-2xl shadow-[0_0_20px_rgba(34,197,94,0.15)] border-b-6 border-green-700 text-center flex items-center justify-center gap-3 transition-all duration-150 cursor-pointer"
+              className="w-full py-6 bg-green-500 active:scale-95 text-black rounded-xl font-black text-2xl tracking-wide shadow-lg border-b-8 border-green-700 text-center flex items-center justify-center gap-2 cursor-pointer"
               id="btn_start_tracking"
             >
-              <Play className="w-6 h-6 sm:w-8 sm:h-8 fill-current" />
-              START ACTIVE RIDE
+              <Play className="w-8 h-8 fill-current" />
+              START NEW RIDE
             </button>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {/* Red Stop Button */}
               <button
                 onClick={handleStopTracking}
-                className="py-6 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-base sm:text-lg shadow-md border-b-6 border-red-800 text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-98"
+                className="py-5 bg-red-650 hover:bg-red-600 text-white rounded-xl font-black text-lg border-b-6 border-red-800 text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
                 id="btn_stop_tracking"
               >
-                <Square className="w-5 h-5 fill-current mb-0.5" />
-                <span>STOP & LOG</span>
+                <Square className="w-6 h-6 fill-current mb-0.5" />
+                <span>FINISH RIDE</span>
               </button>
 
               {/* Cancel Button */}
               <button
                 onClick={handleCancelTracking}
-                className="py-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60 rounded-xl font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 text-sm"
+                className="py-5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-xl font-black text-center flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-base"
                 id="btn_reset_tracking"
               >
-                <RefreshCw className="w-4 h-4 text-zinc-400" />
+                <RefreshCw className="w-5 h-5 text-zinc-500" />
                 <span>CANCEL</span>
               </button>
             </div>
@@ -496,73 +485,73 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         </div>
 
         {/* ACTIVE CRUISE TACTILE TOGGLE (Dead KM Counter) */}
-        <div className="md:col-span-4 flex items-stretch">
+        <div>
           <button
             disabled={!isTracking}
             onClick={() => {
               triggerClick();
               setIsDeadKmMode(!isDeadKmMode);
             }}
-            className={`w-full p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
+            className={`w-full py-5 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
               !isTracking
-                ? 'bg-zinc-950/40 border-zinc-900 text-zinc-600 cursor-not-allowed opacity-40'
+                ? 'bg-zinc-950/40 border-zinc-900 text-zinc-700 cursor-not-allowed opacity-30'
                 : isDeadKmMode
-                  ? 'bg-amber-500 border-amber-600 text-zinc-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.25)]'
-                  : 'bg-zinc-900/80 hover:bg-zinc-850 border-zinc-800 text-zinc-300 hover:text-zinc-100 cursor-pointer'
+                  ? 'bg-amber-500 border-amber-600 text-black font-black shadow-md'
+                  : 'bg-zinc-900 hover:bg-zinc-850 border-zinc-800 text-zinc-300'
             }`}
             id="btn_dead_km_shunter"
           >
             {isDeadKmMode ? (
               <>
-                <MapPinOff className="w-8 h-8 mb-1.5 text-zinc-950 animate-bounce" />
-                <span className="text-xs uppercase tracking-wider font-black">CRUISING RECORDING</span>
-                <span className="text-[10px] opacity-95">Accumulating Dead mileage...</span>
+                <MapPinOff className="w-8 h-8 mb-1 text-black animate-bounce" />
+                <span className="text-base uppercase tracking-wider font-black">SEARCHING FOR CUSTOMER</span>
+                <span className="text-xs opacity-90 font-bold">(Counting Non-Earning KM now)</span>
               </>
             ) : (
               <>
-                <UserCheck className="w-8 h-8 mb-1.5 text-green-400" />
-                <span className="text-xs uppercase tracking-wider font-black">CLIENT BOARDED</span>
-                <span className="text-[10px] text-zinc-500">Tap when passenger boards taxi</span>
+                <UserCheck className="w-8 h-8 mb-1 text-green-400" />
+                <span className="text-base uppercase tracking-wider font-black">CUSTOMER IN CAB / BIKE</span>
+                <span className="text-xs text-zinc-500 font-bold">Tap when customer climbs on / ride starts</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* End Ride Dialog Modal popup - styled elegantly to allow safe entry of earnings immediately */}
+      {/* Save Ride Modal Popup */}
       {showEndModal && (
-        <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-md z-55 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-zinc-800 space-y-5 animate-scaleIn">
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
-              <h3 className="text-sm font-black text-zinc-50 uppercase tracking-widest flex items-center gap-2">
-                <Car className="w-5 h-5 text-green-400" /> Finalize Ride Record
+        <div className="fixed inset-0 bg-black/90 z-55 flex items-center justify-center p-3">
+          <div className="bg-zinc-950 rounded-2xl p-5 max-w-md w-full shadow-2xl border border-zinc-900 space-y-4">
+            <div className="flex justify-between items-center pb-2.5 border-b border-zinc-900">
+              <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Car className="w-5 h-5 text-green-400" /> Save Ride Details
               </h3>
-              <span className="text-[9px] bg-green-500/10 border border-green-500/25 text-green-400 px-2.5 py-1 rounded font-black uppercase tracking-wider">
-                {platform} Ride
+              <span className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 px-2 py-0.5 rounded font-black uppercase">
+                {platform} App
               </span>
             </div>
 
             <form onSubmit={handleSaveRide} className="space-y-4">
-              {/* Core metrics recap banner */}
-              <div className="grid grid-cols-2 gap-3 bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-center">
+              {/* Distance Recap */}
+              <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-3 rounded-xl border border-zinc-850 text-center">
                 <div>
-                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Paid Distance</span>
-                  <p className="text-base font-bold text-zinc-200 mt-0.5">{distanceKm.toFixed(2)} km</p>
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Earning KM</span>
+                  <p className="text-lg font-black text-white">{distanceKm.toFixed(2)} km</p>
                 </div>
                 <div>
-                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Dead Distance</span>
-                  <p className="text-base font-bold text-amber-500 mt-0.5">{deadKm.toFixed(2)} km</p>
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Non-Earning KM</span>
+                  <p className="text-lg font-black text-amber-500">{deadKm.toFixed(2)} km</p>
                 </div>
               </div>
 
               {/* Earnings Input */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
-                  Earnings for this Ride ({currency})
+              <div className="space-y-1">
+                <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider">
+                  Money you got for this Ride ({currency})
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-zinc-500 font-bold text-base">{currency}</span>
+                    <span className="text-zinc-500 font-black text-xl">{currency}</span>
                   </div>
                   <input
                     type="number"
@@ -570,44 +559,44 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                     required
                     value={finalEarnings}
                     onChange={(e) => setFinalEarnings(e.target.value)}
-                    className="pl-8 block w-full rounded-lg bg-zinc-950 border border-zinc-800 p-3 text-zinc-50 text-lg font-bold font-mono focus:outline-none focus:border-green-500"
+                    className="pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-green-500"
                     placeholder="0.00"
                     autoFocus
                   />
                 </div>
-                <p className="text-[10px] text-zinc-500">
-                  Estimated Fuel Expenses: {currency}{estimatedFuelCost.toFixed(2)}
+                <p className="text-xs text-zinc-500 font-bold">
+                  Fuel cost was: {currency}{estimatedFuelCost.toFixed(2)}
                 </p>
               </div>
 
               {/* Ride Notes */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
-                  Optional Notes (Traffic, Pickup region, etc.)
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                  Notes (Optional)
                 </label>
                 <input
                   type="text"
                   value={rideNotes}
                   onChange={(e) => setRideNotes(e.target.value)}
-                  className="block w-full rounded-lg bg-zinc-950 border border-zinc-800 p-2.5 text-sm text-zinc-200 focus:outline-none focus:border-green-500"
-                  placeholder="e.g., Heavy traffic near IT Park"
+                  className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none"
+                  placeholder="e.g. Heavy rain / Traffic delay"
                 />
               </div>
 
               {/* Modal Buttons */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { triggerClick(); setShowEndModal(false); }}
-                  className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-750 text-zinc-400 hover:text-zinc-200 rounded-lg font-bold text-xs cursor-pointer uppercase tracking-wider"
+                  className="flex-1 py-3 bg-zinc-900 text-zinc-400 rounded-lg font-black text-xs uppercase cursor-pointer"
                 >
-                  Discard Ride
+                  Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-green-500 hover:bg-green-400 text-zinc-950 rounded-lg font-extrabold text-xs shadow-md shadow-green-500/10 cursor-pointer flex items-center justify-center gap-1 uppercase tracking-wider"
+                  className="flex-1 py-3 bg-green-500 text-black rounded-lg font-black text-xs cursor-pointer flex items-center justify-center gap-1 uppercase"
                 >
-                  <Check className="w-4 h-4 text-zinc-950 stroke-[3]" /> Save Run
+                  <Check className="w-4 h-4 text-black stroke-[3]" /> Save Ride
                 </button>
               </div>
             </form>
