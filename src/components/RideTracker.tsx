@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 import { TrackingSession, VehicleConfig, Ride } from '../types';
 import { calculateHaversineDistance, formatDistance, formatDuration } from '../utils/geo';
+
+const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
 import { feedbackAudio, triggerHapticFeedback } from '../utils/audio';
 import { 
   Play, 
@@ -204,75 +207,137 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     };
   }, [isTracking]);
 
-  // 2. Real Geolocation Watcher
+  // 2. Real Geolocation Watcher (Mobile Background Location / Browser Geolocation)
   useEffect(() => {
+    let nativeWatcherId: string | null = null;
+    let browserWatcherId: number | null = null;
+
     if (isTracking && !useSimulation) {
-      if ('geolocation' in navigator) {
-        setGeoError(null);
-        
-        geoWatchIdRef.current = navigator.geolocation.watchPosition(
-          (position) => {
-            const { latitude, longitude, accuracy } = position.coords;
-            setGpsAccuracy(accuracy);
-            
-            const currentPoint = { lat: latitude, lng: longitude };
-            setGpsCoordinates(prev => [...prev, currentPoint]);
+      setGeoError(null);
 
-            if (prevCoordsRef.current) {
-              const delta = calculateHaversineDistance(
-                prevCoordsRef.current.lat,
-                prevCoordsRef.current.lng,
-                latitude,
-                longitude
-              );
+      // Check if running on Android/iOS Capacitor native platform
+      const isNative = Capacitor.isNativePlatform();
 
-              // Filter out stationary jitter (if accuracy is low and movement is tiny)
-              if (delta > 0.005 && accuracy < 40) {
-                if (isDeadKmMode) {
-                  setDeadKm(prev => prev + delta);
-                } else {
-                  setDistanceKm(prev => prev + delta);
-                }
-              } else if (delta > 0.002 && accuracy < 15) {
-                // Highly accurate updates
-                if (isDeadKmMode) {
-                  setDeadKm(prev => prev + delta);
-                } else {
-                  setDistanceKm(prev => prev + delta);
+      if (isNative) {
+        BackgroundGeolocation.addWatcher(
+          {
+            backgroundMessage: "Tracking your fare and fuel profit in background...",
+            backgroundTitle: "RideProfit GPS Active",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 2, // Capture updates every 2 meters for high-precision
+          },
+          (location: any, error: any) => {
+            if (error) {
+              console.error("Background GPS Error:", error);
+              setGeoError("Background GPS failed: " + (error.message || error));
+              return;
+            }
+            if (location) {
+              const { latitude, longitude, accuracy } = location;
+              setGpsAccuracy(accuracy || 5);
+
+              const currentPoint = { lat: latitude, lng: longitude };
+              setGpsCoordinates(prev => [...prev, currentPoint]);
+
+              if (prevCoordsRef.current) {
+                const delta = calculateHaversineDistance(
+                  prevCoordsRef.current.lat,
+                  prevCoordsRef.current.lng,
+                  latitude,
+                  longitude
+                );
+
+                // Jitter filters identical to browser geolocation
+                if (delta > 0.005 && (!accuracy || accuracy < 40)) {
+                  if (isDeadKmMode) {
+                    setDeadKm(prev => prev + delta);
+                  } else {
+                    setDistanceKm(prev => prev + delta);
+                  }
+                } else if (delta > 0.002 && (!accuracy || accuracy < 15)) {
+                  if (isDeadKmMode) {
+                    setDeadKm(prev => prev + delta);
+                  } else {
+                    setDistanceKm(prev => prev + delta);
+                  }
                 }
               }
+              prevCoordsRef.current = currentPoint;
             }
-
-            prevCoordsRef.current = currentPoint;
-          },
-          (error) => {
-            console.error('Geo error:', error);
-            let errorMessage = 'GPS unavailable. Try Simulation Mode.';
-            if (error.code === 1) errorMessage = 'GPS Permission Denied. Using browser standard defaults.';
-            setGeoError(errorMessage);
-            setGpsAccuracy(null);
-          },
-          {
-            enableHighAccuracy: true,
-            maximumAge: 1000,
-            timeout: 5000
           }
-        );
+        ).then((watcherId: string) => {
+          nativeWatcherId = watcherId;
+        }).catch((err: any) => {
+          console.error("Native watcher failed:", err);
+          setGeoError("Failed to start Background GPS.");
+        });
       } else {
-        setGeoError('Geolocation API not supported by browser.');
+        // Fallback to standard web browser Geolocation API
+        if ('geolocation' in navigator) {
+          browserWatcherId = navigator.geolocation.watchPosition(
+            (position) => {
+              const { latitude, longitude, accuracy } = position.coords;
+              setGpsAccuracy(accuracy);
+              
+              const currentPoint = { lat: latitude, lng: longitude };
+              setGpsCoordinates(prev => [...prev, currentPoint]);
+
+              if (prevCoordsRef.current) {
+                const delta = calculateHaversineDistance(
+                  prevCoordsRef.current.lat,
+                  prevCoordsRef.current.lng,
+                  latitude,
+                  longitude
+                );
+
+                if (delta > 0.005 && accuracy < 40) {
+                  if (isDeadKmMode) {
+                    setDeadKm(prev => prev + delta);
+                  } else {
+                    setDistanceKm(prev => prev + delta);
+                  }
+                } else if (delta > 0.002 && accuracy < 15) {
+                  if (isDeadKmMode) {
+                    setDeadKm(prev => prev + delta);
+                  } else {
+                    setDistanceKm(prev => prev + delta);
+                  }
+                }
+              }
+
+              prevCoordsRef.current = currentPoint;
+            },
+            (error) => {
+              console.error('Geo error:', error);
+              let errorMessage = 'GPS unavailable. Try Simulation Mode.';
+              if (error.code === 1) errorMessage = 'GPS Permission Denied. Using browser standard defaults.';
+              setGeoError(errorMessage);
+              setGpsAccuracy(null);
+            },
+            {
+              enableHighAccuracy: true,
+              maximumAge: 1000,
+              timeout: 5000
+            }
+          );
+        } else {
+          setGeoError('Geolocation API not supported by browser.');
+        }
       }
     } else {
-      if (geoWatchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(geoWatchIdRef.current);
-        geoWatchIdRef.current = null;
-      }
       prevCoordsRef.current = null;
       setGpsAccuracy(null);
     }
 
     return () => {
-      if (geoWatchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+      if (nativeWatcherId) {
+        BackgroundGeolocation.removeWatcher({ id: nativeWatcherId }).catch((err: any) => {
+          console.error("Failed to remove native watcher:", err);
+        });
+      }
+      if (browserWatcherId !== null) {
+        navigator.geolocation.clearWatch(browserWatcherId);
       }
     };
   }, [isTracking, useSimulation, isDeadKmMode]);
