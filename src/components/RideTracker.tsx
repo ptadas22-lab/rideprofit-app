@@ -29,33 +29,128 @@ interface RideTrackerProps {
 
 export default function RideTracker({ vehicle, currency, onRideLogged }: RideTrackerProps) {
   // Tracking states
-  const [isTracking, setIsTracking] = useState(false);
-  const [platform, setPlatform] = useState<Ride['platform']>('Uber');
-  const [durationSeconds, setDurationSeconds] = useState(0);
-  const [distanceKm, setDistanceKm] = useState(0);
-  const [deadKm, setDeadKm] = useState(0);
+  const [isTracking, setIsTracking] = useState(() => {
+    return localStorage.getItem('rideprofit_active_is_tracking') === 'true';
+  });
+  const [platform, setPlatform] = useState<Ride['platform']>(() => {
+    return (localStorage.getItem('rideprofit_active_platform') as Ride['platform']) || 'Uber';
+  });
+  const [durationSeconds, setDurationSeconds] = useState(() => {
+    return parseInt(localStorage.getItem('rideprofit_active_duration_seconds') || '0', 10);
+  });
+  const [distanceKm, setDistanceKm] = useState(() => {
+    return parseFloat(localStorage.getItem('rideprofit_active_distance_km') || '0');
+  });
+  const [deadKm, setDeadKm] = useState(() => {
+    return parseFloat(localStorage.getItem('rideprofit_active_dead_km') || '0');
+  });
   
   // High contrast switches
-  const [isDeadKmMode, setIsDeadKmMode] = useState(false);
-  const [useSimulation, setUseSimulation] = useState(false);
-  const [simulationSpeed, setSimulationSpeed] = useState<number>(45); // 45 km/h
+  const [isDeadKmMode, setIsDeadKmMode] = useState(() => {
+    return localStorage.getItem('rideprofit_active_is_dead_km_mode') === 'true';
+  });
+  const [useSimulation, setUseSimulation] = useState(() => {
+    return localStorage.getItem('rideprofit_active_use_simulation') === 'true';
+  });
+  const [simulationSpeed, setSimulationSpeed] = useState<number>(() => {
+    return parseInt(localStorage.getItem('rideprofit_active_simulation_speed') || '45', 10);
+  });
   
   // Real GPS feedback
   const [geoError, setGeoError] = useState<string | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
-  const [gpsCoordinates, setGpsCoordinates] = useState<Array<{lat: number, lng: number}>>([]);
+  const [gpsCoordinates, setGpsCoordinates] = useState<Array<{lat: number, lng: number}>>(() => {
+    try {
+      const saved = localStorage.getItem('rideprofit_active_gps_coordinates');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   // End Ride Form
-  const [showEndModal, setShowEndModal] = useState(false);
-  const [finalEarnings, setFinalEarnings] = useState<string>('');
-  const [rideNotes, setRideNotes] = useState<string>('');
+  const [showEndModal, setShowEndModal] = useState(() => {
+    return localStorage.getItem('rideprofit_active_show_end_modal') === 'true';
+  });
+  const [finalEarnings, setFinalEarnings] = useState(() => {
+    return localStorage.getItem('rideprofit_active_final_earnings') || '';
+  });
+  const [rideNotes, setRideNotes] = useState(() => {
+    return localStorage.getItem('rideprofit_active_ride_notes') || '';
+  });
 
   // Timers and Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const geoWatchIdRef = useRef<number | null>(null);
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevCoordsRef = useRef<{lat: number, lng: number} | null>(null);
-  const startTimeRef = useRef<string | null>(null);
+  const startTimeRef = useRef<string | null>(localStorage.getItem('rideprofit_active_start_time'));
+
+  // Sync states to localStorage
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_is_tracking', String(isTracking));
+  }, [isTracking]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_platform', platform);
+  }, [platform]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_duration_seconds', String(durationSeconds));
+  }, [durationSeconds]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_distance_km', String(distanceKm));
+  }, [distanceKm]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_dead_km', String(deadKm));
+  }, [deadKm]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_is_dead_km_mode', String(isDeadKmMode));
+  }, [isDeadKmMode]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_use_simulation', String(useSimulation));
+  }, [useSimulation]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_simulation_speed', String(simulationSpeed));
+  }, [simulationSpeed]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_gps_coordinates', JSON.stringify(gpsCoordinates));
+  }, [gpsCoordinates]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_show_end_modal', String(showEndModal));
+  }, [showEndModal]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_final_earnings', finalEarnings);
+  }, [finalEarnings]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_ride_notes', rideNotes);
+  }, [rideNotes]);
+
+  // Helper to clear localStorage on save or discard
+  const clearActiveTrackingLocalStorage = () => {
+    localStorage.removeItem('rideprofit_active_is_tracking');
+    localStorage.removeItem('rideprofit_active_platform');
+    localStorage.removeItem('rideprofit_active_duration_seconds');
+    localStorage.removeItem('rideprofit_active_distance_km');
+    localStorage.removeItem('rideprofit_active_dead_km');
+    localStorage.removeItem('rideprofit_active_is_dead_km_mode');
+    localStorage.removeItem('rideprofit_active_use_simulation');
+    localStorage.removeItem('rideprofit_active_simulation_speed');
+    localStorage.removeItem('rideprofit_active_gps_coordinates');
+    localStorage.removeItem('rideprofit_active_show_end_modal');
+    localStorage.removeItem('rideprofit_active_final_earnings');
+    localStorage.removeItem('rideprofit_active_ride_notes');
+    localStorage.removeItem('rideprofit_active_start_time');
+  };
 
   // Sound effect helpers
   const triggerStartSequence = () => {
@@ -73,12 +168,13 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     triggerHapticFeedback(40);
   };
 
-  // 1. Duration Tracker
+  // 1. Duration Tracker - Absolute and immune to screen locks or CPU throttles
   useEffect(() => {
-    if (isTracking) {
-      const start = Date.now();
+    if (isTracking && startTimeRef.current) {
+      const start = new Date(startTimeRef.current).getTime();
       timerRef.current = setInterval(() => {
-        setDurationSeconds(prev => prev + 1);
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        setDurationSeconds(elapsed >= 0 ? elapsed : 0);
       }, 1000);
     } else {
       if (timerRef.current) {
@@ -89,6 +185,22 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isTracking]);
+
+  // 1b. Visibility change catch-up (unlock / tab restore / wake-up)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isTracking && startTimeRef.current) {
+        const start = new Date(startTimeRef.current).getTime();
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        setDurationSeconds(elapsed >= 0 ? elapsed : 0);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isTracking]);
 
@@ -225,7 +337,9 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     setGpsCoordinates([]);
     setGeoError(null);
     setIsDeadKmMode(false);
-    startTimeRef.current = new Date().toISOString();
+    const nowStr = new Date().toISOString();
+    startTimeRef.current = nowStr;
+    localStorage.setItem('rideprofit_active_start_time', nowStr);
   };
 
   const handleStopTracking = () => {
@@ -251,6 +365,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
       setDistanceKm(0);
       setDeadKm(0);
       setGpsCoordinates([]);
+      clearActiveTrackingLocalStorage();
     }
   };
 
@@ -290,6 +405,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     setDistanceKm(0);
     setDeadKm(0);
     setGpsCoordinates([]);
+    clearActiveTrackingLocalStorage();
   };
 
   // Instant Profit estimation during live route!
