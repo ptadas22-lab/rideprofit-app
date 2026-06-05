@@ -10,7 +10,7 @@ export interface VehicleConfig {
 
 export interface Ride {
   id: string;
-  platform: 'Uber' | 'Ola' | 'Rapido' | 'Yandex' | 'Custom' | 'Personal';
+  platform: 'Cab Ride' | 'Auto Ride' | 'Bike Ride' | 'Delivery Ride' | 'Custom' | 'Personal';
   startTime: string; // ISO string
   endTime: string; // ISO string
   durationSeconds: number;
@@ -29,7 +29,7 @@ export interface Ride {
 export interface TrackingSession {
   isActive: boolean;
   startTime: string | null;
-  platform: 'Uber' | 'Ola' | 'Rapido' | 'Yandex' | 'Custom' | 'Personal';
+  platform: 'Cab Ride' | 'Auto Ride' | 'Bike Ride' | 'Delivery Ride' | 'Custom' | 'Personal';
   currentDistance: number;
   currentDeadKm: number;
   gpsTracked: boolean;
@@ -39,7 +39,7 @@ export interface TrackingSession {
 export const VEHICLE_PRESETS: Record<VehicleType, Omit<VehicleConfig, 'fuelPrice'>> = {
   bike: {
     type: 'bike',
-    name: 'Bike Taxi (e.g. Rapido, Uber Moto)',
+    name: 'Bike Taxi',
     mileage: 45.0,
     fuelUnit: 'Litre',
   },
@@ -57,7 +57,7 @@ export const VEHICLE_PRESETS: Record<VehicleType, Omit<VehicleConfig, 'fuelPrice
   },
   car_diesel: {
     type: 'car_diesel',
-    name: 'Diesel Cab (e.g. Ola, Uber Sedan)',
+    name: 'Diesel Cab',
     mileage: 18.0,
     fuelUnit: 'Litre',
   },

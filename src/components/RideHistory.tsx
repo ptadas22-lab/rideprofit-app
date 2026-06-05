@@ -33,7 +33,7 @@ export default function RideHistory({
   
   // Quick Log form toggles
   const [showQuickLogForm, setShowQuickLogForm] = useState(false);
-  const [quickPlatform, setQuickPlatform] = useState<Ride['platform']>('Uber');
+  const [quickPlatform, setQuickPlatform] = useState<Ride['platform']>('Cab Ride');
   const [quickEarnings, setQuickEarnings] = useState('');
   const [quickDistance, setQuickDistance] = useState('');
   const [quickDeadKm, setQuickDeadKm] = useState('');
@@ -118,13 +118,13 @@ export default function RideHistory({
   // Styling helper for platform badges
   const getPlatformColors = (plat: Ride['platform']) => {
     switch (plat) {
-      case 'Uber':
+      case 'Cab Ride':
         return 'bg-zinc-900 text-zinc-100 border-zinc-800';
-      case 'Ola':
+      case 'Auto Ride':
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'Rapido':
+      case 'Bike Ride':
         return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'Yandex':
+      case 'Delivery Ride':
         return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
       case 'Custom':
         return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
@@ -164,13 +164,13 @@ export default function RideHistory({
             
             {/* Platform Selection */}
             <div className="md:col-span-3 space-y-1">
-              <label className="block text-[10px] font-black text-zinc-400 uppercase">App name</label>
+              <label className="block text-[10px] font-black text-zinc-400 uppercase">Ride Type</label>
               <select
                 value={quickPlatform}
                 onChange={(e) => setQuickPlatform(e.target.value as Ride['platform'])}
                 className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer"
               >
-                {(['Uber', 'Ola', 'Rapido', 'Yandex', 'Custom', 'Personal'] as const).map(p => (
+                {(['Cab Ride', 'Auto Ride', 'Bike Ride', 'Delivery Ride', 'Custom', 'Personal'] as const).map(p => (
                   <option key={p} className="bg-zinc-950" value={p}>{p}</option>
                 ))}
               </select>
@@ -270,7 +270,7 @@ export default function RideHistory({
 
         <div className="flex gap-2 items-center flex-wrap">
           {/* Quick Filter Selection */}
-          {(['All', 'Uber', 'Ola', 'Rapido', 'Yandex', 'Custom'] as const).map(f => (
+          {(['All', 'Cab Ride', 'Auto Ride', 'Bike Ride', 'Delivery Ride', 'Custom'] as const).map(f => (
             <button
               key={f}
               onClick={() => { triggerClick(); setPlatformFilter(f); }}

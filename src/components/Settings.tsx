@@ -297,6 +297,17 @@ export default function Settings({
             <p>Every click increases the fuel price. Check "Today's Profit" and see how your Profit Per Hour drops!</p>
           </div>
         </div>
+
+        {/* Privacy Note */}
+        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl space-y-2 text-zinc-400">
+          <h4 className="text-xs font-black uppercase text-green-400 flex items-center gap-1.5">
+            🛡️ Privacy & Security Note
+          </h4>
+          <p className="text-xs leading-normal">
+            Your ride data stays on your phone. RideProfit does not upload your location, earnings, or ride history.
+          </p>
+        </div>
+
       </div>
 
     </div>

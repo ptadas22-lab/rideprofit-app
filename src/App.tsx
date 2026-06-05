@@ -29,7 +29,7 @@ const LOCAL_STORAGE_CURRENCY_KEY = 'rideprofit_currency';
 const INITIAL_DEMO_RIDES: Ride[] = [
   {
     id: 'demo_ride_1',
-    platform: 'Uber',
+    platform: 'Cab Ride',
     startTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
     endTime: new Date(Date.now() - 3.5 * 3605 * 1000).toISOString(),
     durationSeconds: 1800,
@@ -46,7 +46,7 @@ const INITIAL_DEMO_RIDES: Ride[] = [
   },
   {
     id: 'demo_ride_2',
-    platform: 'Rapido',
+    platform: 'Bike Ride',
     startTime: new Date(Date.now() - 2.5 * 3600 * 1000).toISOString(),
     endTime: new Date(Date.now() - 2.3 * 3605 * 1000).toISOString(),
     durationSeconds: 720,
@@ -63,7 +63,7 @@ const INITIAL_DEMO_RIDES: Ride[] = [
   },
   {
     id: 'demo_ride_3',
-    platform: 'Ola',
+    platform: 'Auto Ride',
     startTime: new Date(Date.now() - 1 * 3650 * 1000).toISOString(),
     endTime: new Date(Date.now() - 0.5 * 3605 * 1000).toISOString(),
     durationSeconds: 2100,
@@ -86,7 +86,16 @@ export default function App() {
     try {
       const persisted = localStorage.getItem(LOCAL_STORAGE_RIDES_KEY);
       if (persisted) {
-        return JSON.parse(persisted);
+        const parsed = JSON.parse(persisted);
+        // Migrate old trademark platform names to generic ones
+        return parsed.map((r: any) => ({
+          ...r,
+          platform: r.platform === 'Uber' ? 'Cab Ride'
+                  : r.platform === 'Ola' ? 'Auto Ride'
+                  : r.platform === 'Rapido' ? 'Bike Ride'
+                  : r.platform === 'Yandex' ? 'Delivery Ride'
+                  : r.platform
+        }));
       }
     } catch (e) {
       console.warn('LocalStorage reads failed:', e);
@@ -305,7 +314,7 @@ export default function App() {
       {/* Embedded footer block - humble professional metadata */}
       <footer className="mt-auto border-t border-zinc-900 py-4 bg-zinc-950" id="main_driver_footer">
         <div className="max-w-7xl mx-auto px-4 text-center text-xs text-zinc-500 font-medium">
-          <p>© 2026 RideProfit Dashboard. Made to help Ola, Uber, Rapido, and delivery riders know their real earnings.</p>
+          <p>© 2026 RideProfit Dashboard. Made to help taxi, auto, bike, and delivery riders know their real earnings.</p>
         </div>
       </footer>
 

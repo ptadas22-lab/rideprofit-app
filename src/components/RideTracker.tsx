@@ -36,7 +36,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     return localStorage.getItem('rideprofit_active_is_tracking') === 'true';
   });
   const [platform, setPlatform] = useState<Ride['platform']>(() => {
-    return (localStorage.getItem('rideprofit_active_platform') as Ride['platform']) || 'Uber';
+    return (localStorage.getItem('rideprofit_active_platform') as Ride['platform']) || 'Cab Ride';
   });
   const [durationSeconds, setDurationSeconds] = useState(() => {
     return parseInt(localStorage.getItem('rideprofit_active_duration_seconds') || '0', 10);
@@ -347,7 +347,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     if (isTracking && useSimulation) {
       setGeoError(null);
       // Center of city simulation coordinates (e.g. San Francisco or Mumbai depending on context)
-      // We will anchor to standard 12.9716, 77.5946 (Bangalore, ride-hailing hub for Ola/Rapido)
+      // We will anchor to standard 12.9716, 77.5946 (Bangalore, ride-hailing hub)
       let currentLat = prevCoordsRef.current?.lat || 12.9716;
       let currentLng = prevCoordsRef.current?.lng || 77.5946;
       
@@ -413,7 +413,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     
     // Auto calculate suggested initial earning based on common pricing metrics (e.g., fuel costs * 3 + distance base fare)
     // to make driver experience frictionless
-    const approxFares: Record<string, number> = { Uber: 16, Ola: 15, Rapido: 8, Yandex: 12, Custom: 10, Personal: 0 };
+    const approxFares: Record<string, number> = { 'Cab Ride': 16, 'Auto Ride': 15, 'Bike Ride': 8, 'Delivery Ride': 12, Custom: 10, Personal: 0 };
     const baseRate = approxFares[platform] || 10;
     const suggestedEarning = (distanceKm * baseRate) + (platform === 'Personal' ? 0 : 5);
     
@@ -481,9 +481,9 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
       {/* App & Fake GPS Controls */}
       <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col gap-4 shadow-sm" id="platform_control_row">
         <div>
-          <label className="text-xs font-black text-green-400 uppercase tracking-wider">Which App are you using?</label>
+          <label className="text-xs font-black text-green-400 uppercase tracking-wider">Ride Type</label>
           <div className="flex flex-wrap gap-2 mt-2" id="platform_pills">
-            {(['Uber', 'Ola', 'Rapido', 'Yandex', 'Custom', 'Personal'] as const).map((p) => (
+            {(['Cab Ride', 'Auto Ride', 'Bike Ride', 'Delivery Ride', 'Custom', 'Personal'] as const).map((p) => (
               <button
                 key={p}
                 disabled={isTracking}
