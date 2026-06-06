@@ -26,61 +26,32 @@ const LOCAL_STORAGE_VEHICLE_KEY = 'rideprofit_vehicle_db';
 const LOCAL_STORAGE_CURRENCY_KEY = 'rideprofit_currency';
 
 // Prepopulate standard realistic starter dataset so drivers instantly understand performance metrics
-const INITIAL_DEMO_RIDES: Ride[] = [
-  {
-    id: 'demo_ride_1',
-    platform: 'Cab Ride',
-    startTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-    endTime: new Date(Date.now() - 3.5 * 3605 * 1000).toISOString(),
-    durationSeconds: 1800,
-    distanceKm: 14.5,
-    deadKm: 3.2,
-    earnings: 280,
-    fuelPriceAtTime: 96.50,
-    mileageAtTime: 14.5,
-    fuelCost: 117.84,
-    profit: 162.16,
-    vehicleType: 'car_petrol',
-    notes: 'Rain traffic near high demand tech park',
-    hasGPSPath: true
-  },
-  {
-    id: 'demo_ride_2',
-    platform: 'Bike Ride',
-    startTime: new Date(Date.now() - 2.5 * 3600 * 1000).toISOString(),
-    endTime: new Date(Date.now() - 2.3 * 3605 * 1000).toISOString(),
-    durationSeconds: 720,
-    distanceKm: 5.2,
-    deadKm: 1.1,
-    earnings: 85,
-    fuelPriceAtTime: 96.50,
-    mileageAtTime: 45.0,
-    fuelCost: 13.51,
-    profit: 71.49,
-    vehicleType: 'bike',
-    notes: 'Short alleyway shortcut passenger pickup',
-    hasGPSPath: false
-  },
-  {
-    id: 'demo_ride_3',
-    platform: 'Auto Ride',
-    startTime: new Date(Date.now() - 1 * 3650 * 1000).toISOString(),
-    endTime: new Date(Date.now() - 0.5 * 3605 * 1000).toISOString(),
-    durationSeconds: 2100,
-    distanceKm: 22.0,
-    deadKm: 6.8,
-    earnings: 450,
-    fuelPriceAtTime: 96.50,
-    mileageAtTime: 14.5,
-    fuelCost: 191.70,
-    profit: 258.30,
-    vehicleType: 'car_petrol',
-    notes: 'Airport terminal long haul active run',
-    hasGPSPath: true
-  }
-];
+const INITIAL_DEMO_RIDES: Ride[] = [];
 
 export default function App() {
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('rideprofit_beta_unlocked') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+  const [accessCode, setAccessCode] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accessCode.trim() === 'RIDEPROFIT2026') {
+      try {
+        localStorage.setItem('rideprofit_beta_unlocked', 'true');
+      } catch (err) {}
+      setIsUnlocked(true);
+      setErrorMsg('');
+    } else {
+      setErrorMsg('Invalid access code. Please contact app owner.');
+    }
+  };
+
   // 1. Initial configuration loader
   const [rides, setRides] = useState<Ride[]>(() => {
     try {
@@ -174,6 +145,65 @@ export default function App() {
 
   // Live total metrics highlight inside the header
   const totalSessionProfit = rides.reduce((acc, r) => acc + r.profit, 0);
+
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-screen bg-black text-zinc-100 flex flex-col items-center justify-center font-sans px-4 carbon-overlay selection:bg-green-500 selection:text-zinc-950" id="access_frame">
+        <div className="max-w-md w-full bg-zinc-950 border border-zinc-900 rounded-2xl p-6 shadow-xl space-y-6 text-center">
+          
+          {/* Logo & Header */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-14 h-14 bg-green-500 rounded-xl flex items-center justify-center text-black font-black text-2xl shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+              RP
+            </div>
+            <div className="space-y-1">
+              <span className="font-black text-2xl text-white tracking-tight block">RideProfit</span>
+              <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Beta Tester Access</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleUnlock} className="space-y-4 text-left">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-black text-green-400 uppercase tracking-wider">
+                Enter Beta Access Code
+              </label>
+              <input
+                type="text"
+                required
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                className="block w-full rounded-xl bg-black border border-zinc-800 p-4 text-center text-xl font-black tracking-widest text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                placeholder="••••••••••••"
+                autoFocus
+              />
+            </div>
+
+            {errorMsg && (
+              <div className="flex items-center gap-2 text-red-400 bg-red-950/20 border border-red-500/20 p-3 rounded-lg text-xs font-bold" id="error_container">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-green-500 hover:bg-green-400 active:scale-98 text-black rounded-xl font-black text-lg tracking-wide shadow-lg border-b-4 border-green-700 text-center flex items-center justify-center cursor-pointer"
+              id="btn_unlock_app"
+            >
+              UNLOCK APP
+            </button>
+          </form>
+
+          {/* Privacy Note */}
+          <div className="border-t border-zinc-900 pt-4 text-xs text-zinc-500 space-y-1">
+            <p className="font-medium text-zinc-400">🛡️ Privacy Guarantee</p>
+            <p>RideProfit Beta does not collect your personal information. Ride data stays on your phone.</p>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans carbon-overlay selection:bg-green-500 selection:text-zinc-950" id="app_frame">

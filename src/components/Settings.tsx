@@ -8,7 +8,8 @@ import {
   Check, 
   Info, 
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -306,6 +307,52 @@ export default function Settings({
           <p className="text-xs leading-normal">
             Your ride data stays on your phone. RideProfit does not upload your location, earnings, or ride history.
           </p>
+        </div>
+
+        {/* Reset App Data */}
+        <div className="p-4 bg-zinc-950 border border-red-955/20 rounded-xl space-y-3" id="reset_app_data_section">
+          <div>
+            <h4 className="text-xs font-black uppercase text-red-400 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" /> Danger Zone
+            </h4>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Delete all your stored rides, tracking sessions, and configuration values</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              triggerClick();
+              if (window.confirm("Are you sure you want to delete all your ride data, history, and custom settings? This cannot be undone!")) {
+                const keysToRemove = [
+                  'rideprofit_rides_db',
+                  'rideprofit_vehicle_db',
+                  'rideprofit_currency',
+                  'rideprofit_active_is_tracking',
+                  'rideprofit_active_platform',
+                  'rideprofit_active_duration_seconds',
+                  'rideprofit_active_distance_km',
+                  'rideprofit_active_dead_km',
+                  'rideprofit_active_is_dead_km_mode',
+                  'rideprofit_active_use_simulation',
+                  'rideprofit_active_simulation_speed',
+                  'rideprofit_active_gps_coordinates',
+                  'rideprofit_active_show_end_modal',
+                  'rideprofit_active_final_earnings',
+                  'rideprofit_active_ride_notes',
+                  'rideprofit_active_start_time'
+                ];
+                keysToRemove.forEach(k => {
+                  try {
+                    localStorage.removeItem(k);
+                  } catch (e) {}
+                });
+                alert("All ride data has been cleared. Reloading...");
+                window.location.reload();
+              }
+            }}
+            className="w-full py-2.5 bg-red-950/20 text-red-400 border border-red-500/20 hover:bg-red-500/10 rounded-lg text-xs font-black uppercase cursor-pointer flex items-center justify-center gap-1"
+          >
+            Clear My Ride Data
+          </button>
         </div>
 
       </div>
