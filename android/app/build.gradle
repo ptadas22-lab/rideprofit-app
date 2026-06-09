@@ -1,8 +1,26 @@
 apply plugin: 'com.android.application'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
 android {
     namespace "com.rideprofit.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
+    signingConfigs {
+        release {
+            storeFile file("rideprofit.keystore")
+            storePassword localProperties.getProperty('release.storePassword')
+            keyAlias localProperties.getProperty('release.keyAlias')
+            keyPassword localProperties.getProperty('release.keyPassword')
+        }
+    }
+
     defaultConfig {
         applicationId "com.rideprofit.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -18,7 +36,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

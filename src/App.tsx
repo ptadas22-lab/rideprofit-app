@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Ride, VehicleConfig, VEHICLE_PRESETS, VehicleType } from './types';
+import { BETA_ACCESS_CODE } from './config';
 import Dashboard from './components/Dashboard';
 import RideTracker from './components/RideTracker';
 import RideHistory from './components/RideHistory';
@@ -41,7 +42,7 @@ export default function App() {
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (accessCode.trim() === 'RIDEPROFIT2026') {
+    if (accessCode.trim() === BETA_ACCESS_CODE) {
       try {
         localStorage.setItem('rideprofit_beta_unlocked', 'true');
       } catch (err) {}

@@ -30,7 +30,7 @@ export default function Settings({
   const [fuelPrice, setFuelPrice] = useState<string>(vehicle.fuelPrice.toString());
   const [vehicleName, setVehicleName] = useState<string>(vehicle.name);
   const [vehicleType, setVehicleType] = useState<VehicleType>(vehicle.type);
-  const [escRate, setEscRate] = useState<string>('5.00'); // default flat increase rate of 5.00 INR/units per step
+
 
   const triggerClick = () => {
     feedbackAudio.playClickSound();
@@ -83,22 +83,7 @@ export default function Settings({
     alert('Vehicle setup saved successfully!');
   };
 
-  // Fuel price hike simulation
-  const handleEscalatePrice = () => {
-    triggerSuccess();
-    const currentPrice = parseFloat(fuelPrice) || 95.0;
-    const rate = parseFloat(escRate) || 5.0;
-    const nextPrice = currentPrice + rate;
-    
-    setFuelPrice(nextPrice.toFixed(2));
 
-    onVehicleChange({
-      ...vehicle,
-      fuelPrice: parseFloat(nextPrice.toFixed(2))
-    });
-
-    alert(`Fuel price increased by +${rate}. New fuel price: ${currency}${nextPrice.toFixed(2)} per ${vehicle.fuelUnit}. See how your clear profit decreases in the dashboard!`);
-  };
 
   // Helper icons
   const getPresetIcon = (type: VehicleType) => {
@@ -249,55 +234,7 @@ export default function Settings({
           </button>
         </form>
 
-        {/* Gradual Fuel Price Escalator Simulation Section */}
-        <div className="p-5 bg-zinc-950 border border-zinc-900 rounded-xl text-zinc-105 space-y-4 shadow-sm" id="escalation_trainer">
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 bg-green-500/10 text-green-400 rounded-xl">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-zinc-100 uppercase flex items-center gap-1">
-                Fuel Price Hike Tester
-              </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5">Test how fuel price changes affect your daily clear profits</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-zinc-900 pt-3">
-            <div className="col-span-2 space-y-2">
-              <label className="block text-[10px] font-black text-zinc-500 uppercase">Increase price by</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  step="1.0"
-                  value={escRate}
-                  onChange={(e) => setEscRate(e.target.value)}
-                  className="p-2.5 bg-black border border-zinc-900 rounded-lg text-xs text-green-400 font-mono font-black w-20"
-                />
-                <button
-                  type="button"
-                  onClick={handleEscalatePrice}
-                  className="flex-1 py-2.5 bg-red-650 text-white rounded-lg text-xs font-black uppercase cursor-pointer transition-all flex items-center justify-center gap-1 border-b-2 border-red-800"
-                >
-                  Increase Fuel Price <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-black p-3 rounded-lg border border-zinc-900 flex flex-col justify-center text-center">
-              <span className="text-[10px] text-zinc-500 uppercase font-black">New Price</span>
-              <span className="text-lg font-black font-mono text-green-400 glow-green block mt-0.5">
-                {currency}{parseFloat(fuelPrice).toFixed(2)}
-              </span>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase mt-0.5">per {vehicle.fuelUnit}</span>
-            </div>
-          </div>
-          
-          <div className="text-[10px] text-zinc-500 flex items-start gap-1.5 leading-normal">
-            <Info className="w-4 h-4 shrink-0 text-zinc-650 mt-0.5" />
-            <p>Every click increases the fuel price. Check "Today's Profit" and see how your Profit Per Hour drops!</p>
-          </div>
-        </div>
+        {/* Fuel Price Hike Tester section removed for production release */}
 
         {/* Privacy Note */}
         <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl space-y-2 text-zinc-400">

@@ -52,12 +52,8 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
   const [isDeadKmMode, setIsDeadKmMode] = useState(() => {
     return localStorage.getItem('rideprofit_active_is_dead_km_mode') === 'true';
   });
-  const [useSimulation, setUseSimulation] = useState(() => {
-    return localStorage.getItem('rideprofit_active_use_simulation') === 'true';
-  });
-  const [simulationSpeed, setSimulationSpeed] = useState<number>(() => {
-    return parseInt(localStorage.getItem('rideprofit_active_simulation_speed') || '45', 10);
-  });
+  const useSimulation = false;
+  const simulationSpeed = 45;
   
   // Real GPS feedback
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -114,13 +110,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     localStorage.setItem('rideprofit_active_is_dead_km_mode', String(isDeadKmMode));
   }, [isDeadKmMode]);
 
-  useEffect(() => {
-    localStorage.setItem('rideprofit_active_use_simulation', String(useSimulation));
-  }, [useSimulation]);
-
-  useEffect(() => {
-    localStorage.setItem('rideprofit_active_simulation_speed', String(simulationSpeed));
-  }, [simulationSpeed]);
+  // Simulation storage sync removed for production release
 
   useEffect(() => {
     localStorage.setItem('rideprofit_active_gps_coordinates', JSON.stringify(gpsCoordinates));
@@ -500,27 +490,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
           </div>
         </div>
 
-        {/* GPS Simulation Switch */}
-        <div className="border-t border-zinc-900 pt-3 flex items-center justify-between gap-3">
-          <div>
-            <span className="text-xs font-black text-zinc-300 flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-green-400" /> Test App Indoors (Fake GPS)
-            </span>
-            <p className="text-[11px] text-zinc-500">Turn on to test how the GPS works without driving</p>
-          </div>
-          <button
-            onClick={() => { triggerClick(); setUseSimulation(!useSimulation); }}
-            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-              useSimulation ? 'bg-green-500' : 'bg-zinc-800'
-            }`}
-          >
-            <div
-              className={`bg-white w-5 h-5 rounded-full shadow transition-transform ${
-                useSimulation ? 'translate-x-[28px]' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
+        {/* Simulation switch removed for production release */}
       </div>
 
       {/* Main HUD (Heads-Up Display) Panel */}
@@ -593,9 +563,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
           <div className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-full ${isTracking ? 'bg-green-500 animate-ping' : 'bg-zinc-800'}`}></div>
             <span>
-              {isTracking 
-                ? (useSimulation ? `Faking Speed: ${simulationSpeed} km/h` : `GPS is ON`) 
-                : 'GPS is OFF'}
+              {isTracking ? 'GPS is ON' : 'GPS is OFF'}
             </span>
           </div>
 
@@ -606,25 +574,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
           )}
         </div>
 
-        {/* Speed limit Controls inside simulation */}
-        {isTracking && useSimulation && (
-          <div className="mt-3 p-2 bg-zinc-900 border border-zinc-850 rounded-lg flex flex-wrap gap-1.5 items-center">
-            <span className="text-[10px] font-black text-zinc-400 uppercase">Speed:</span>
-            {[25, 45, 80].map(speed => (
-              <button
-                key={speed}
-                onClick={() => { triggerClick(); setSimulationSpeed(speed); }}
-                className={`py-1 px-2.5 text-xs font-black rounded cursor-pointer transition-all ${
-                  simulationSpeed === speed 
-                    ? 'bg-green-500 text-black' 
-                    : 'bg-zinc-800 text-zinc-400'
-                }`}
-              >
-                {speed === 25 ? '🏍️ 25km/h' : speed === 45 ? '🚗 45km/h' : '✈️ 80km/h'}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Speed limit controls removed for production release */}
       </div>
 
       {/* TACTILE COCKPIT CONTROLS - GIANT TOUCH TARGETS */}
