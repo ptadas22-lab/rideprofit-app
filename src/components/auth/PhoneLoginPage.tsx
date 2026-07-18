@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Smartphone, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { feedbackAudio, triggerHapticFeedback } from '../../utils/audio';
 
 export default function PhoneLoginPage() {
-  const navigate = useNavigate();
   const [mobile, setMobile] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendOTP = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,14 +14,9 @@ export default function PhoneLoginPage() {
       return;
     }
     
-    setIsLoading(true);
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
-
-    setTimeout(() => {
-      // Mock passing the phone number to the next screen via state
-      navigate('/verify-otp', { state: { mobile } });
-    }, 800);
+    setError('Phone Authentication via Supabase is coming soon!');
   };
 
   return (
@@ -63,10 +56,9 @@ export default function PhoneLoginPage() {
 
           <button 
             type="submit"
-            disabled={isLoading}
-            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50"
+            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all cursor-pointer"
           >
-            {isLoading ? 'Sending OTP...' : 'Send OTP'}
+            Send OTP
           </button>
         </form>
 

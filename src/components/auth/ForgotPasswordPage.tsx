@@ -1,25 +1,36 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Mail, CheckCircle2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { feedbackAudio, triggerHapticFeedback } from '../../utils/audio';
+import { supabase } from '../../lib/supabase';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSent, setIsSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
+    setError('');
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
 
-    setTimeout(() => {
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`, // Basic redirect, can be adjusted based on needs
+    });
+
+    if (resetError) {
+      setError(resetError.message);
       setIsLoading(false);
-      setIsSent(true);
-    }, 1000);
+      return;
+    }
+
+    setIsLoading(false);
+    setIsSent(true);
   };
 
   return (
@@ -49,6 +60,13 @@ export default function ForgotPasswordPage() {
               <p className="text-[14px] text-gray-400 font-medium">Enter your email address to receive a secure password reset link.</p>
             </div>
 
+            {error && (
+              <div className="flex items-center gap-2 p-4 bg-red-950/30 border border-red-500/20 text-red-400 rounded-[12px] text-[13px] font-bold">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
             <form onSubmit={handleReset} className="space-y-6">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -67,7 +85,7 @@ export default function ForgotPasswordPage() {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50"
+                className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isLoading ? 'Sending...' : 'Send Reset Link'}
               </button>

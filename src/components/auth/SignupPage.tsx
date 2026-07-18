@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, User as UserIcon, Smartphone, AlertTriangle } from 'lucide-react';
 import { feedbackAudio, triggerHapticFeedback } from '../../utils/audio';
+import { supabase } from '../../lib/supabase';
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,8 +16,10 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (!name || !email || !mobile || !password) {
       setError('Please fill in all fields.');
       return;
@@ -36,17 +37,27 @@ export default function SignupPage() {
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
 
-    // Mock API Call
-    setTimeout(() => {
-      login({
-        id: `user_${Date.now()}`,
-        name,
-        email,
-        mobile,
-        provider: 'email'
-      });
-      navigate('/app', { replace: true });
-    }, 1000);
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      phone: mobile,
+      options: {
+        data: {
+          full_name: name,
+        }
+      }
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    // Since Supabase usually signs them in immediately (if email confirmations are off)
+    // or requires email confirmation, we'll navigate to the app. 
+    // The AuthContext onAuthStateChange will pick up the session if they are logged in.
+    navigate('/app', { replace: true });
   };
 
   return (
@@ -154,7 +165,7 @@ export default function SignupPage() {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50"
+            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>

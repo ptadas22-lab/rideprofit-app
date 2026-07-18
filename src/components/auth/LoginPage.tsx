@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, Smartphone, Chrome, AlertTriangle } from 'lucide-react';
 import { feedbackAudio, triggerHapticFeedback } from '../../utils/audio';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in both email and password.');
@@ -22,35 +21,28 @@ export default function LoginPage() {
     }
     
     setIsLoading(true);
+    setError('');
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
 
-    // Mock API Call
-    setTimeout(() => {
-      login({
-        id: 'user_12345',
-        name: 'Demo Driver',
-        email,
-        provider: 'email'
-      });
-      navigate('/app', { replace: true });
-    }, 800);
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    navigate('/app', { replace: true });
   };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
+  const handleComingSoon = () => {
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
-
-    setTimeout(() => {
-      login({
-        id: 'user_google_789',
-        name: 'Google Driver',
-        email: 'driver@gmail.com',
-        provider: 'google'
-      });
-      navigate('/app', { replace: true });
-    }, 800);
+    setError('This feature is coming soon!');
   };
 
   return (
@@ -79,19 +71,19 @@ export default function LoginPage() {
           {/* Social Logins */}
           <button 
             type="button"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 bg-gray-900 hover:bg-gray-700 border border-white/10 rounded-[16px] text-[14px] font-black text-white transition-all disabled:opacity-50"
+            onClick={handleComingSoon}
+            className="w-full flex items-center justify-center gap-3 py-3.5 bg-gray-900 hover:bg-gray-700 border border-white/10 rounded-[16px] text-[14px] font-black text-gray-400 transition-all cursor-not-allowed"
           >
-            <Chrome className="w-5 h-5" /> Continue with Google
+            <Chrome className="w-5 h-5 text-gray-500" /> Continue with Google (Soon)
           </button>
           
-          <Link 
-            to="/phone-login"
-            className="w-full flex items-center justify-center gap-3 py-3.5 bg-gray-900 hover:bg-gray-700 border border-white/10 rounded-[16px] text-[14px] font-black text-white transition-all"
+          <button 
+            type="button"
+            onClick={handleComingSoon}
+            className="w-full flex items-center justify-center gap-3 py-3.5 bg-gray-900 hover:bg-gray-700 border border-white/10 rounded-[16px] text-[14px] font-black text-gray-400 transition-all cursor-not-allowed"
           >
-            <Smartphone className="w-5 h-5" /> Continue with Mobile Number
-          </Link>
+            <Smartphone className="w-5 h-5 text-gray-500" /> Continue with Mobile (Soon)
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -149,7 +141,7 @@ export default function LoginPage() {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50"
+            className="w-full py-4 bg-green-500 hover:brightness-110 active:scale-98 text-gray-900 rounded-[16px] font-black text-[15px] uppercase tracking-wide shadow-lg flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? 'Logging In...' : 'Login'}
           </button>
