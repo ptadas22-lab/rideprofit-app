@@ -166,40 +166,40 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
 
   return (
     <div className="space-y-4" id="dashboard_section">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3" id="stats_overview_grid">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4" id="stats_overview_grid">
         
         {/* Metric 1 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_profit">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_profit">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Total Distance</span>
-                <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
-                  <Route className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Total Distance</span>
+                <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+                  <Route className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-blue-400">
+                <h3 className="text-[32px] font-black font-mono tracking-tight text-blue-400 leading-none">
                   {formatDistance(stats.totalDistanceEverything)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total Driven
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Clear Profit</span>
-                <div className="p-1.5 bg-green-500/10 text-green-400 rounded-lg">
-                  <PiggyBank className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Clear Profit</span>
+                <div className="p-2 bg-green-500/10 text-green-400 rounded-xl">
+                  <PiggyBank className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${stats.totalProfit >= 0 ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`}>
+                <h3 className={`text-[32px] font-black font-mono tracking-tight leading-none ${stats.totalProfit >= 0 ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`}>
                   {stats.totalProfit >= 0 ? '' : '-'}{currency}{Math.abs(stats.totalProfit).toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   {stats.totalEarnings > 0 
                     ? `${((stats.totalProfit / stats.totalEarnings) * 100).toFixed(0)}% profit margin` 
                     : 'Money left after fuel'}
@@ -210,37 +210,37 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Metric 2 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_earnings">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_earnings">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Fuel Cost</span>
-                <div className="p-1.5 bg-red-500/10 text-red-400 rounded-lg">
-                  <Fuel className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Fuel Cost</span>
+                <div className="p-2 bg-red-500/10 text-red-500 rounded-xl">
+                  <Fuel className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {currency}{stats.totalFuelCost.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Spent: {((stats.totalDistanceEverything) / (vehicle.mileage || 1)).toFixed(1)} {vehicle.fuelUnit}
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Daily Earnings</span>
-                <div className="p-1.5 bg-green-500/10 text-green-400 rounded-lg">
-                  <Award className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Daily Earnings</span>
+                <div className="p-2 bg-green-500/10 text-green-400 rounded-xl">
+                  <Award className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {currency}{stats.totalEarnings.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total cash collected
                 </p>
               </div>
@@ -249,71 +249,71 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Metric 3 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_profit_per_hour">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_profit_per_hour">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Trip Expense</span>
-                <div className="p-1.5 bg-purple-500/10 text-purple-400 rounded-lg">
-                  <PiggyBank className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Trip Expense</span>
+                <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl">
+                  <PiggyBank className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-purple-400">
+                <h3 className="text-[32px] font-black font-mono tracking-tight text-purple-400 leading-none">
                   {currency}{stats.totalTripExpense.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total expenses
                 </p>
               </div>
             </>
           ) : platform === 'Delivery Ride' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Orders Completed</span>
-                <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
-                  <Package className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Orders Completed</span>
+                <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+                  <Package className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-zinc-100">
+                <h3 className="text-[32px] font-black font-mono tracking-tight text-white leading-none">
                   {stats.ridesCount}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total orders
                 </p>
               </div>
             </>
           ) : platform === 'Bike Ride' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Profit Per Order</span>
-                <div className="p-1.5 bg-emerald-500/10 text-emerald-450 rounded-lg">
-                  <Zap className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Profit Per Order</span>
+                <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                  <Zap className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${(stats.totalProfit / (stats.ridesCount || 1)) >= 0 ? 'text-emerald-450 glow-green' : 'text-red-400 glow-red'}`}>
+                <h3 className={`text-[32px] font-black font-mono tracking-tight leading-none ${(stats.totalProfit / (stats.ridesCount || 1)) >= 0 ? 'text-emerald-400 glow-green' : 'text-red-400 glow-red'}`}>
                   {currency}{(stats.totalProfit / (stats.ridesCount || 1)).toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Average per order
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Profit Per Hour</span>
-                <div className="p-1.5 bg-emerald-500/10 text-emerald-450 rounded-lg">
-                  <Zap className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Profit Per Hour</span>
+                <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                  <Zap className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${stats.profitPerHour >= 0 ? 'text-emerald-450 glow-green' : 'text-red-400 glow-red'}`}>
+                <h3 className={`text-[32px] font-black font-mono tracking-tight leading-none ${stats.profitPerHour >= 0 ? 'text-emerald-400 glow-green' : 'text-red-400 glow-red'}`}>
                   {currency}{stats.profitPerHour.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Earned for every 1 hour
                 </p>
               </div>
@@ -322,88 +322,88 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Metric 4 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_deadkm">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_deadkm">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Drive Time</span>
-                <div className="p-1.5 bg-zinc-800 text-zinc-400 rounded-lg">
-                  <Calendar className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Drive Time</span>
+                <div className="p-2 bg-yellow-500/10 text-yellow-400 rounded-xl">
+                  <Calendar className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {formatDuration(stats.totalDurationSeconds)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total driving duration
                 </p>
               </div>
             </>
           ) : platform === 'Delivery Ride' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Avg Earn / Order</span>
-                <div className="p-1.5 bg-green-500/10 text-green-400 rounded-lg">
-                  <Award className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Avg Earn / Order</span>
+                <div className="p-2 bg-green-500/10 text-green-400 rounded-xl">
+                  <Award className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {currency}{(stats.totalEarnings / (stats.ridesCount || 1)).toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Per order average
                 </p>
               </div>
             </>
           ) : platform === 'Bike Ride' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Orders Completed</span>
-                <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
-                  <Package className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Orders Completed</span>
+                <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+                  <Package className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-zinc-100">
+                <h3 className="text-[32px] font-black font-mono tracking-tight text-white leading-none">
                   {stats.ridesCount}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total orders
                 </p>
               </div>
             </>
           ) : platform === 'Auto Ride' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Waiting Time</span>
-                <div className="p-1.5 bg-amber-500/10 text-amber-400 rounded-lg">
-                  <Clock className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Waiting Time</span>
+                <div className="p-2 bg-yellow-500/10 text-yellow-400 rounded-xl">
+                  <Clock className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-amber-500 tracking-tight">
-                  {stats.totalWaitingTime} <span className="text-sm">mins</span>
+                <h3 className="text-[32px] font-black font-mono text-yellow-400 tracking-tight leading-none">
+                  {stats.totalWaitingTime} <span className="text-xl">mins</span>
                 </h3>
-                <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-yellow-500 mt-1.5 uppercase tracking-wider">
                   Total idle waiting
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Non-Earning KM</span>
-                <div className="p-1.5 bg-amber-500/10 text-amber-400 rounded-lg">
-                  <MapPinOff className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Non-Earning KM</span>
+                <div className="p-2 bg-yellow-500/10 text-yellow-400 rounded-xl">
+                  <MapPinOff className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-amber-500 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-yellow-400 tracking-tight leading-none">
                   {formatDistance(stats.totalDeadKm)}
                 </h3>
-                <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-yellow-500 mt-1.5 uppercase tracking-wider">
                   {stats.deadKmPercent.toFixed(0)}% empty driving
                 </p>
               </div>
@@ -412,37 +412,37 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Metric 5 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_fuel">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_fuel">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Average Mileage</span>
-                <div className="p-1.5 bg-green-500/10 text-green-400 rounded-lg">
-                  <Gauge className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Average Mileage</span>
+                <div className="p-2 bg-green-500/10 text-green-400 rounded-xl">
+                  <Gauge className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {vehicle.mileage}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   KM per {vehicle.fuelUnit}
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Fuel Cost</span>
-                <div className="p-1.5 bg-red-500/10 text-red-400 rounded-lg">
-                  <Fuel className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Fuel Cost</span>
+                <div className="p-2 bg-red-500/10 text-red-500 rounded-xl">
+                  <Fuel className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {currency}{stats.totalFuelCost.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Spent: {((stats.totalDistanceEverything) / (vehicle.mileage || 1)).toFixed(1)} {vehicle.fuelUnit}
                 </p>
               </div>
@@ -451,37 +451,37 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Metric 6 */}
-        <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex flex-col justify-between" id="metric_time">
+        <div className="p-5 bg-gray-700 border border-white/10 rounded-[18px] flex flex-col justify-between shadow-md transition-transform hover:scale-[1.02]" id="metric_time">
           {platform === 'Personal' ? (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Cost Per KM</span>
-                <div className="p-1.5 bg-red-500/10 text-red-400 rounded-lg">
-                  <Activity className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Cost Per KM</span>
+                <div className="p-2 bg-red-500/10 text-red-500 rounded-xl">
+                  <Activity className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-red-400 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-red-400 tracking-tight leading-none">
                   {currency}{stats.costPerKm.toFixed(2)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Running cost
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-zinc-400 uppercase tracking-wide">Ride Time</span>
-                <div className="p-1.5 bg-zinc-800 text-zinc-400 rounded-lg">
-                  <Calendar className="w-5 h-5" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-black text-gray-400 uppercase tracking-wide">Ride Time</span>
+                <div className="p-2 bg-yellow-500/10 text-yellow-400 rounded-xl">
+                  <Calendar className="w-6 h-6" />
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 tracking-tight">
+                <h3 className="text-[32px] font-black font-mono text-white tracking-tight leading-none">
                   {formatDuration(stats.totalDurationSeconds)}
                 </h3>
-                <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-wider">
+                <p className="text-[12px] font-bold text-gray-500 mt-1.5 uppercase tracking-wider">
                   Total driving duration
                 </p>
               </div>
@@ -491,30 +491,30 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4" id="dashboard_details_grid">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5" id="dashboard_details_grid">
         
         {/* Custom simplified SVG Chart Panel */}
-        <div className="lg:col-span-7 p-4 bg-zinc-950 border border-zinc-900 rounded-xl space-y-4" id="performance_chart_panel">
+        <div className="lg:col-span-7 p-6 bg-gray-700 border border-white/10 rounded-[20px] space-y-4 shadow-md" id="performance_chart_panel">
           <div>
-            <h3 className="text-sm font-black text-zinc-100 uppercase tracking-wide">
+            <h3 className="text-[16px] font-black text-white uppercase tracking-wide">
               {platform === 'Cab Ride' ? 'Profit vs Fuel' : 
                platform === 'Auto Ride' ? 'Profit vs Waiting Time' :
                platform === 'Bike Ride' ? 'Orders vs Earnings' :
                platform === 'Delivery Ride' ? 'Orders vs Earnings' :
                platform === 'Personal' ? 'Distance vs Fuel Cost' : 'Profit per Ride'} Chart
             </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">Showing performance of your last {chartData.length} rides</p>
+            <p className="text-[13px] text-gray-400 mt-1">Showing performance of your last {chartData.length} rides</p>
           </div>
 
           {rides.length === 0 ? (
-            <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 text-center p-4">
-              <Fuel className="w-8 h-8 text-zinc-750 font-black" />
-              <p className="text-xs font-black text-zinc-400 mt-2">No rides logged yet.</p>
+            <div className="h-56 flex flex-col items-center justify-center border-[3px] border-dashed border-gray-600 rounded-xl bg-gray-800/40 text-center p-4">
+              <Fuel className="w-10 h-10 text-gray-600 font-black" />
+              <p className="text-[14px] font-black text-gray-400 mt-2">No rides logged yet.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="w-full h-48 bg-zinc-900/40 rounded-xl p-3 border border-zinc-900 flex flex-col justify-between">
-                <div className="relative flex-1 flex items-end justify-between px-1 gap-2">
+            <div className="space-y-4">
+              <div className="w-full h-56 bg-gray-800/50 rounded-[16px] p-4 border border-white/5 flex flex-col justify-between">
+                <div className="relative flex-1 flex items-end justify-between px-2 gap-3">
                   {chartData.map((data, idx) => {
                     let metric1 = 0;
                     let metric2 = 0;
@@ -557,17 +557,17 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
 
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
-                        <div className="flex items-end space-x-1 w-full justify-center h-[80%] max-w-[40px]">
+                        <div className="flex items-end space-x-1.5 w-full justify-center h-[85%] max-w-[45px]">
                           <div 
                             style={{ height: `${Math.max(height1, 4)}%` }} 
-                            className="w-2.5 bg-green-500 rounded-t-sm"
+                            className="w-3 bg-green-500 rounded-t-sm"
                           ></div>
                           <div 
                             style={{ height: `${Math.max(height2, 4)}%` }} 
-                            className="w-2 bg-red-600 rounded-t-sm"
+                            className="w-3 bg-red-500 rounded-t-sm"
                           ></div>
                         </div>
-                        <span className="text-[9px] text-zinc-400 mt-1 font-black uppercase">
+                        <span className="text-[11px] text-gray-400 mt-1 font-black uppercase">
                           {data.label.charAt(0)}{idx + 1}
                         </span>
                       </div>
@@ -577,17 +577,17 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
               </div>
 
               {/* Chart Legend */}
-              <div className="flex gap-4 justify-center text-[10px] text-zinc-400 font-black uppercase">
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 bg-green-500 rounded-sm"></span> 
+              <div className="flex gap-5 justify-center text-[12px] text-gray-400 font-black uppercase mt-2">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-green-500 rounded-sm"></span> 
                   {platform === 'Cab Ride' ? 'Profit' :
                    platform === 'Auto Ride' ? 'Profit' :
                    platform === 'Bike Ride' ? 'Orders' :
                    platform === 'Delivery Ride' ? 'Orders' :
                    platform === 'Personal' ? 'Distance' : 'Profit'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 bg-red-650 rounded-sm"></span> 
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-red-500 rounded-sm"></span> 
                   {platform === 'Cab Ride' ? 'Fuel Cost' :
                    platform === 'Auto Ride' ? 'Waiting Time' :
                    platform === 'Bike Ride' ? 'Earnings' :
@@ -600,37 +600,37 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
         </div>
 
         {/* Actionable Helpful Tips Panel */}
-        <div className="lg:col-span-5 p-4 bg-zinc-950 text-zinc-100 rounded-xl border border-zinc-900 shadow-md flex flex-col justify-between" id="actionable_insights_panel">
+        <div className="lg:col-span-5 p-6 bg-gray-700 text-white rounded-[20px] border border-white/10 shadow-md flex flex-col justify-between" id="actionable_insights_panel">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1 bg-green-500/10 text-green-400 rounded-md">
-                <Zap className="w-5 h-5" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-500/10 text-green-400 rounded-lg">
+                <Zap className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-black text-zinc-100 text-sm uppercase">Helpful Tips</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">RideProfit Coach</p>
+                <h3 className="font-black text-[16px] text-white uppercase">Helpful Tips</h3>
+                <p className="text-[11px] text-gray-400 uppercase tracking-widest font-black">RideProfit Coach</p>
               </div>
             </div>
 
-            <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1" id="insights_scroller">
+            <div className="space-y-3 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar" id="insights_scroller">
               {insights.map(item => (
                 <div 
                   key={item.id} 
-                  className={`p-3 rounded-lg border ${
+                  className={`p-4 rounded-[14px] border transition-colors ${
                     item.type === 'warning' 
-                      ? 'bg-amber-500/5 border-amber-500/30 text-amber-250' 
+                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' 
                       : item.type === 'success' 
-                        ? 'bg-green-500/5 border-green-500/30 text-green-250' 
-                        : 'bg-zinc-900 border-zinc-850 text-zinc-300'
+                        ? 'bg-green-500/10 border-green-500/20 text-green-200' 
+                        : 'bg-gray-800 border-white/5 text-gray-300'
                   }`}
                 >
-                  <div className="flex items-start gap-2">
-                    {item.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />}
-                    {item.type === 'success' && <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />}
-                    {item.type === 'info' && <TrendingUp className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />}
+                  <div className="flex items-start gap-3">
+                    {item.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
+                    {item.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />}
+                    {item.type === 'info' && <TrendingUp className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />}
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wide">{item.title}</h4>
-                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-normal">{item.desc}</p>
+                      <h4 className="text-[13px] font-black uppercase tracking-wide">{item.title}</h4>
+                      <p className="text-[13px] text-gray-400 mt-1 leading-relaxed opacity-90">{item.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -638,10 +638,10 @@ export default function Dashboard({ rides, vehicle, currency }: DashboardProps) 
             </div>
           </div>
 
-          <div className="border-t border-zinc-900 pt-3 mt-4 text-xs font-black uppercase tracking-wider text-zinc-500 space-y-1.5">
+          <div className="border-t border-white/10 pt-4 mt-5 text-[12px] font-black uppercase tracking-wider text-gray-500 space-y-2">
             <div className="flex items-center justify-between">
               <span>Vehicle Profile:</span>
-              <span className="text-zinc-300">
+              <span className="text-gray-300">
                 {platform === 'Cab Ride' ? 'Commercial Car' :
                  platform === 'Auto Ride' ? 'Auto Rickshaw' :
                  platform === 'Bike Ride' ? 'Motorcycle' :

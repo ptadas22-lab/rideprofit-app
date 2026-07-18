@@ -518,26 +518,41 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
   return (
     <div className="space-y-4" id="ride_tracker_cockpit">
       {/* App & Fake GPS Controls */}
-      <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col gap-4 shadow-sm" id="platform_control_row">
+      <div className="bg-gray-800 border border-white/10 p-5 rounded-[18px] flex flex-col gap-4 shadow-md" id="platform_control_row">
         <div>
           <label className="text-xs font-black text-green-400 uppercase tracking-wider">Ride Type</label>
-          <div className="flex flex-wrap gap-2 mt-2" id="platform_pills">
+          <div className="flex flex-col gap-3 mt-2" id="platform_pills">
             {Object.values(RIDE_PROFILES).map((p) => {
               if (p.id === 'Custom') return null; // Hide custom from active tracker list
               const Icon = p.icon;
+              
+              const descriptions: Record<string, string> = {
+                'Cab Ride': 'Passenger Taxi',
+                'Auto Ride': 'Three Wheeler',
+                'Bike Ride': 'Two Wheeler',
+                'Delivery Ride': 'Parcel Delivery',
+                'Personal': 'Private Trip'
+              };
+              const desc = descriptions[p.name] || '';
+
               return (
                 <button
                   key={p.id}
                   disabled={isTracking}
                   onClick={() => { triggerClick(); setPlatform(p.id); }}
-                  className={`py-2.5 px-4 rounded-xl text-sm font-black cursor-pointer flex items-center gap-2 transition-all border-b-2 ${
+                  className={`p-4 rounded-[16px] text-left cursor-pointer flex items-center gap-4 transition-all border ${
                     platform === p.id 
-                      ? `bg-zinc-900 border-${p.color} ${p.accentClass} shadow-md` 
-                      : 'bg-zinc-950 text-zinc-500 border-zinc-900 hover:text-zinc-300 disabled:opacity-30 disabled:hover:text-zinc-500'
+                      ? `bg-green-500/10 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.15)]` 
+                      : 'bg-gray-700 border-white/10 hover:border-gray-500 disabled:opacity-40 disabled:cursor-not-allowed'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  {p.name}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${platform === p.id ? 'bg-green-500 text-gray-900' : 'bg-gray-800 text-gray-400'}`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className={`text-[16px] font-black ${platform === p.id ? 'text-green-400 glow-green' : 'text-gray-200'}`}>{p.name}</h4>
+                    {desc && <p className={`text-[13px] font-medium ${platform === p.id ? 'text-green-500/80' : 'text-gray-400'}`}>{desc}</p>}
+                  </div>
                 </button>
               );
             })}
@@ -548,93 +563,98 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
       </div>
 
       {/* Main HUD (Heads-Up Display) Panel */}
-      <div className="p-5 bg-zinc-950 text-white rounded-xl border border-zinc-900 shadow-md relative overflow-hidden" id="navigation_hud_display">
+      <div className="p-6 bg-gray-800 text-white rounded-[18px] border border-white/10 shadow-md relative overflow-hidden" id="navigation_hud_display">
         {isTracking && (
-          <div className="absolute top-4 right-4 flex items-center gap-1 py-1 px-2.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded text-[10px] font-black uppercase tracking-widest animate-pulse">
-            <Activity className="w-3.5 h-3.5" /> DRIVING NOW
+          <div className="absolute top-5 right-5 flex items-center gap-1.5 py-1 px-3 bg-green-500/10 text-green-400 border border-green-500/30 rounded-full text-[11px] font-black uppercase tracking-widest animate-pulse">
+            <Activity className="w-4 h-4" /> DRIVING NOW
           </div>
         )}
 
         {/* HUD Grid Metrics */}
-        <div className={`grid gap-4 pt-2 ${activeProfile.showDeadKm ? 'grid-cols-2' : 'grid-cols-2'}`} id="live_metrics_scrow">
+        <div className={`grid gap-4 pt-2 grid-cols-2`} id="live_metrics_scrow">
           {/* Active Ride Distance */}
-          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
-            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <Navigation className={`w-4 h-4 ${activeProfile.accentClass}`} /> {activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}
+          <div className="space-y-1 bg-gray-700/50 p-4 rounded-xl border border-white/5">
+            <span className="text-[13px] text-gray-400 uppercase tracking-wide flex items-center gap-1.5 font-bold">
+              <Navigation className="w-6 h-6 text-blue-400" /> {activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className={`text-3xl sm:text-4xl font-black text-white font-mono ${activeProfile.accentClass.replace('text-', 'glow-')}`}>
+              <span className={`text-[34px] font-black text-white font-mono leading-none`}>
                 {distanceKm.toFixed(2)}
               </span>
-              <span className="text-xs text-zinc-500 font-bold">KM</span>
+              <span className="text-[13px] text-gray-500 font-bold ml-1">KM</span>
             </div>
-            <p className="text-[10px] text-zinc-500">{activeProfile.showDeadKm ? 'With customer' : 'Total driven'}</p>
+            <p className="text-[12px] text-gray-500 mt-1">{activeProfile.showDeadKm ? 'With customer' : 'Total driven'}</p>
           </div>
 
           {/* Unpaid Dead Distance (Conditionally Hidden) */}
           {activeProfile.showDeadKm && (
-            <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
-              <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-                <MapPinOff className="w-4 h-4 text-amber-500" /> Non-Earning KM
+            <div className="space-y-1 bg-gray-700/50 p-4 rounded-xl border border-white/5">
+              <span className="text-[13px] text-gray-400 uppercase tracking-wide flex items-center gap-1.5 font-bold">
+                <MapPinOff className="w-6 h-6 text-blue-400 opacity-50" /> Non-Earning KM
               </span>
               <div className="flex items-baseline gap-1 pt-1">
-                <span className="text-3xl sm:text-4xl font-black text-amber-500 font-mono">
+                <span className="text-[34px] font-black text-white font-mono leading-none opacity-80">
                   {deadKm.toFixed(2)}
                 </span>
-                <span className="text-xs text-zinc-500 font-bold">KM</span>
+                <span className="text-[13px] text-gray-500 font-bold ml-1">KM</span>
               </div>
-              <p className="text-[10px] text-amber-500/70">Without customer</p>
+              <p className="text-[12px] text-gray-500 mt-1">Without customer</p>
             </div>
           )}
 
           {/* Travel Duration */}
-          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
-            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <Timer className="w-4 h-4 text-emerald-400" /> {activeProfile.showDeadKm ? 'Ride Time' : 'Drive Time'}
+          <div className="space-y-1 bg-gray-700/50 p-4 rounded-xl border border-white/5">
+            <span className="text-[13px] text-gray-400 uppercase tracking-wide flex items-center gap-1.5 font-bold">
+              <Timer className="w-6 h-6 text-yellow-400" /> {activeProfile.showDeadKm ? 'Ride Time' : 'Drive Time'}
             </span>
             <div className="pt-1">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 block">
+              <span className="text-[34px] font-black font-mono text-white leading-none block">
                 {formatDuration(durationSeconds)}
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500">Time spent so far</p>
+            <p className="text-[12px] text-gray-500 mt-1">Time spent so far</p>
           </div>
 
           {/* estimated fuel cost / mileage overlay */}
-          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
-            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+          <div className="space-y-1 bg-gray-700/50 p-4 rounded-xl border border-white/5">
+            <span className="text-[13px] text-gray-400 uppercase tracking-wide flex items-center gap-1.5 font-bold">
               {activeProfile.id === 'Personal' ? (
-                <><Activity className="w-4 h-4 text-purple-400" /> Mileage</>
+                <><Activity className="w-6 h-6 text-cyan-400" /> Mileage</>
               ) : (
-                <><Compass className="w-4 h-4 text-red-400" /> Fuel Cost</>
+                <><Compass className="w-6 h-6 text-red-500" /> Fuel Cost</>
               )}
             </span>
             <div className="flex items-baseline gap-1 pt-1">
               {activeProfile.id === 'Personal' ? (
-                <span className="text-3xl sm:text-4xl font-black text-purple-400 font-mono">
+                <span className="text-[34px] font-black text-cyan-400 font-mono leading-none">
                   {vehicle.mileage}
                 </span>
               ) : (
-                <span className="text-3xl sm:text-4xl font-black text-red-500 font-mono">
+                <span className="text-[34px] font-black text-red-500 font-mono leading-none">
                   {currency}{estimatedFuelCost.toFixed(2)}
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-zinc-500">{activeProfile.id === 'Personal' ? `${vehicle.fuelUnit} / KM` : 'Calculated fuel loss'}</p>
+            <p className="text-[12px] text-gray-500 mt-1">{activeProfile.id === 'Personal' ? `${vehicle.fuelUnit} / KM` : 'Calculated fuel loss'}</p>
           </div>
         </div>
 
         {/* GPS Satellite Connectivity Bar */}
-        <div className="border-t border-zinc-900 mt-4 pt-3 flex flex-wrap justify-between items-center gap-2 text-[10px] uppercase font-black tracking-wider text-zinc-500">
-          <div className="flex items-center gap-1.5">
-            <div className={`w-2.5 h-2.5 rounded-full ${isTracking ? 'bg-green-500 animate-ping' : 'bg-zinc-800'}`}></div>
-            <span>
-              {isTracking ? 'GPS is ON' : 'GPS is OFF'}
-            </span>
-          </div>
+        <div className="border-t border-white/10 mt-6 pt-4 flex flex-wrap justify-between items-center gap-2">
+          {isTracking ? (
+            <div className="px-3 py-1.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full flex items-center gap-2 text-[12px] font-bold">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              GPS Connected
+            </div>
+          ) : (
+            <div className="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full flex items-center gap-2 text-[12px] font-bold">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              GPS Disconnected
+            </div>
+          )}
 
           {geoError && (
-            <div className="text-red-400 text-[10px] font-bold">
+            <div className="text-red-400 text-[12px] font-bold">
               <span>{geoError}</span>
             </div>
           )}
@@ -650,7 +670,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
           {!isTracking ? (
               <button
                 onClick={handleStartTracking}
-                className={`w-full py-6 bg-zinc-900 active:scale-95 text-zinc-100 rounded-xl font-black text-2xl tracking-wide shadow-lg border-b-8 border-zinc-950 text-center flex items-center justify-center gap-2 cursor-pointer transition-all hover:brightness-110 ${activeProfile.badgeClass}`}
+                className={`w-full py-6 bg-green-500 active:scale-95 text-gray-900 rounded-[20px] font-black text-2xl tracking-wide shadow-lg border-b-[6px] border-green-700 text-center flex items-center justify-center gap-2 cursor-pointer transition-all hover:brightness-110`}
                 id="btn_start_tracking"
               >
                 <Play className="w-8 h-8 fill-current" />
@@ -661,7 +681,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
               {/* Red Stop Button */}
               <button
                 onClick={handleStopTracking}
-                className="py-5 bg-red-650 hover:bg-red-600 text-white rounded-xl font-black text-lg border-b-6 border-red-800 text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                className="py-5 bg-red-500 hover:bg-red-400 text-white rounded-[18px] font-black text-[18px] border-b-[5px] border-red-700 text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all shadow-lg"
                 id="btn_stop_tracking"
               >
                 <Square className="w-6 h-6 fill-current mb-0.5" />
@@ -671,10 +691,10 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
               {/* Cancel Button */}
               <button
                 onClick={handleCancelTracking}
-                className="py-5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded-xl font-black text-center flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-base"
+                className="py-5 bg-gray-700 hover:bg-gray-600 text-white border-b-[5px] border-gray-900 rounded-[18px] font-black text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 text-[18px] transition-all shadow-lg"
                 id="btn_reset_tracking"
               >
-                <RefreshCw className="w-5 h-5 text-zinc-500" />
+                <RefreshCw className="w-6 h-6 text-gray-400 mb-0.5" />
                 <span>CANCEL</span>
               </button>
             </div>
@@ -719,13 +739,13 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
       {/* Save Ride Modal Popup */}
       {showEndModal && (
-        <div className="fixed inset-0 bg-black/90 z-55 flex items-center justify-center p-3">
-          <div className="bg-zinc-950 rounded-2xl p-5 max-w-md w-full shadow-2xl border border-zinc-900 space-y-4">
-            <div className="flex justify-between items-center pb-2.5 border-b border-zinc-900">
-              <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                <activeProfile.icon className={`w-5 h-5 ${activeProfile.accentClass}`} /> Save Details
+        <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-[20px] p-6 max-w-md w-full shadow-2xl border border-white/10 space-y-5">
+            <div className="flex justify-between items-center pb-4 border-b border-white/10">
+              <h3 className="text-[18px] font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <activeProfile.icon className={`w-6 h-6 text-green-400`} /> Save Details
               </h3>
-              <span className={`text-xs px-2 py-0.5 rounded font-black uppercase ${activeProfile.badgeClass}`}>
+              <span className={`text-[12px] px-2.5 py-1 rounded bg-green-500/20 text-green-400 font-black uppercase`}>
                 {activeProfile.name}
               </span>
             </div>
@@ -734,13 +754,13 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
               {/* Dynamic Ride Category */}
               {activeProfile.showRideCategory && (
                 <div className="space-y-1">
-                  <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                  <label className="block text-[13px] font-black text-gray-400 uppercase tracking-wider">
                     {activeProfile.categoryLabel}
                   </label>
                   <select
                     value={rideCategory}
                     onChange={(e) => setRideCategory(e.target.value)}
-                    className="w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer"
+                    className="w-full rounded-[14px] bg-gray-900 border border-white/10 p-4 text-[15px] text-white focus:outline-none cursor-pointer"
                   >
                     {activeProfile.categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.label}</option>
@@ -750,27 +770,27 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
               )}
 
               {/* Distance Recap */}
-              <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-3 rounded-xl border border-zinc-850 text-center">
+              <div className="grid grid-cols-2 gap-3 bg-gray-700 p-4 rounded-[14px] border border-white/5 text-center">
                 <div>
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">{activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}</span>
-                  <p className="text-lg font-black text-white">{distanceKm.toFixed(2)} km</p>
+                  <span className="text-[12px] font-black text-gray-400 uppercase tracking-wider">{activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}</span>
+                  <p className="text-[22px] font-black text-white">{distanceKm.toFixed(2)} km</p>
                 </div>
                 {activeProfile.showDeadKm && (
                   <div>
-                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Non-Earning KM</span>
-                    <p className="text-lg font-black text-amber-500">{deadKm.toFixed(2)} km</p>
+                    <span className="text-[12px] font-black text-gray-400 uppercase tracking-wider">Non-Earning KM</span>
+                    <p className="text-[22px] font-black text-blue-400">{deadKm.toFixed(2)} km</p>
                   </div>
                 )}
               </div>
 
               {/* Earnings Input / Profile Specific Block */}
               <div className="space-y-1">
-                <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider">
+                <label className="block text-[13px] font-black text-gray-400 uppercase tracking-wider">
                   Money you got for this Ride ({currency})
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-zinc-500 font-black text-xl">{currency}</span>
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span className="text-gray-500 font-black text-2xl">{currency}</span>
                   </div>
                   <input
                     type="number"
@@ -779,17 +799,17 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                     disabled={!activeProfile.showEarnings}
                     value={!activeProfile.showEarnings ? '0' : finalEarnings}
                     onChange={(e) => setFinalEarnings(e.target.value)}
-                    className={`pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-${activeProfile.color.split('-')[0]}-500 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`pl-12 block w-full rounded-[14px] bg-gray-900 border border-white/10 p-4 text-white text-[28px] font-black font-mono focus:outline-none focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed`}
                     placeholder="0.00"
                     autoFocus={activeProfile.showEarnings}
                   />
                 </div>
                 {!activeProfile.showEarnings ? (
-                  <p className={`text-xs ${activeProfile.accentClass} font-bold`}>
+                  <p className={`text-[13px] text-gray-400 font-bold`}>
                     Personal Trip. No commercial earnings.
                   </p>
                 ) : (
-                  <p className="text-xs text-zinc-500 font-bold">
+                  <p className="text-[13px] text-gray-400 font-bold mt-1">
                     Fuel cost was: {currency}{estimatedFuelCost.toFixed(2)}
                   </p>
                 )}
@@ -797,17 +817,17 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
               {/* Dynamic Fields generated strictly from Ride Profile Config */}
               {activeProfile.dynamicFields.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-4 pt-2">
                   {activeProfile.dynamicFields.map(field => (
                     <div key={field.id} className="space-y-1">
-                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                      <label className="block text-[12px] font-black text-gray-400 uppercase tracking-wider">
                         {field.label} {field.type === 'currency' ? `(${currency})` : ''}
                       </label>
                       {field.type === 'select' ? (
                         <select
                           value={dynamicFields[field.id] || ''}
                           onChange={(e) => setDynamicFields(prev => ({ ...prev, [field.id]: e.target.value }))}
-                          className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer"
+                          className="block w-full rounded-[14px] bg-gray-900 border border-white/10 p-3 text-[14px] text-white focus:outline-none cursor-pointer"
                         >
                           {field.options?.map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
@@ -824,11 +844,11 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                               [field.id]: field.type === 'number' ? (parseFloat(e.target.value) || e.target.value) : e.target.value 
                             }))}
                             placeholder={field.placeholder || "0"}
-                            className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none"
+                            className="block w-full rounded-[14px] bg-gray-900 border border-white/10 p-3 text-[14px] text-white focus:outline-none"
                           />
                           {field.suffix && (
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <span className="text-[10px] text-zinc-500 font-black uppercase">{field.suffix}</span>
+                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                              <span className="text-[11px] text-gray-500 font-black uppercase">{field.suffix}</span>
                             </div>
                           )}
                         </div>
@@ -840,32 +860,32 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
               {/* Ride Notes */}
               <div className="space-y-1">
-                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                <label className="block text-[13px] font-black text-gray-400 uppercase tracking-wider">
                   Notes (Optional)
                 </label>
                 <input
                   type="text"
                   value={rideNotes}
                   onChange={(e) => setRideNotes(e.target.value)}
-                  className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none"
+                  className="block w-full rounded-[14px] bg-gray-900 border border-white/10 p-4 text-[14px] text-white focus:outline-none"
                   placeholder="e.g. Heavy rain / Traffic delay"
                 />
               </div>
 
               {/* Modal Buttons */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => { triggerClick(); setShowEndModal(false); }}
-                  className="flex-1 py-3 bg-zinc-900 text-zinc-400 rounded-lg font-black text-xs uppercase cursor-pointer"
+                  className="flex-1 py-4 bg-gray-700 text-white rounded-[14px] font-black text-[14px] uppercase cursor-pointer hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 py-3 bg-${activeProfile.color.split('-')[0]}-500 text-black rounded-lg font-black text-xs cursor-pointer flex items-center justify-center gap-1 uppercase hover:brightness-110`}
+                  className={`flex-1 py-4 bg-green-500 text-gray-900 rounded-[14px] font-black text-[14px] cursor-pointer flex items-center justify-center gap-2 uppercase hover:brightness-110 transition-colors shadow-md`}
                 >
-                  <Check className="w-4 h-4 text-black stroke-[3]" /> Save Ride
+                  <Check className="w-5 h-5 text-gray-900 stroke-[3]" /> Save Ride
                 </button>
               </div>
             </form>

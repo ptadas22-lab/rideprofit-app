@@ -138,23 +138,23 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
   }, [distance, pickupDistance, proposedFare, platformFee, maintenanceCostPerKm, targetMargin, vehicle]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-2" id="fare_profit_calculator">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-3" id="fare_profit_calculator">
       
       {/* Parameters Panel */}
-      <div className="lg:col-span-6 p-5 bg-zinc-950 border border-zinc-900 rounded-xl space-y-5" id="quick_offer_settings">
+      <div className="lg:col-span-6 p-6 bg-gray-700 border border-white/10 rounded-[20px] space-y-6 shadow-md" id="quick_offer_settings">
         <div>
-          <h3 className="text-sm font-black text-zinc-100 uppercase tracking-wide flex items-center gap-1.5">
-            <Sliders className="w-5 h-5 text-green-400" /> Smart Profit Checker
+          <h3 className="text-[16px] font-black text-white uppercase tracking-wide flex items-center gap-2">
+            <Sliders className="w-6 h-6 text-green-400" /> Smart Profit Checker
           </h3>
-          <p className="text-xs text-zinc-500 mt-0.5">Check if a ride offer is profitable or a loss before accepting</p>
+          <p className="text-[13px] text-gray-400 mt-1">Check if a ride offer is profitable or a loss before accepting</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Slider 1: Customer KM */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
               <span>Ride Distance (KM)</span>
-              <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{distance} km</span>
+              <span className="bg-gray-900 border border-white/10 py-1.5 px-3 rounded-[10px] text-white font-mono">{distance} km</span>
             </div>
             <input
               type="range"
@@ -162,21 +162,21 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
               max="100"
               value={distance}
               onChange={(e) => { triggerClick(); setDistance(Number(e.target.value)); }}
-              className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+              className="w-full h-3 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
             />
           </div>
 
           {/* Slider 2: Proposed Fare */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
               <span>Offered Fare</span>
-              <div className="flex items-center gap-1">
-                <span className="text-zinc-550 text-xs font-bold">{currency}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-gray-500 text-[13px] font-bold">{currency}</span>
                 <input
                   type="number"
                   value={proposedFare}
                   onChange={(e) => { triggerClick(); setProposedFare(Number(e.target.value)); }}
-                  className="w-20 p-1 bg-black border border-zinc-900 text-right rounded font-mono font-black text-white text-xs"
+                  className="w-24 p-1.5 bg-gray-900 border border-white/10 text-right rounded-[10px] font-mono font-black text-white text-[14px] focus:outline-none focus:border-green-500"
                 />
               </div>
             </div>
@@ -187,23 +187,23 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
               step="5"
               value={proposedFare}
               onChange={(e) => { triggerClick(); setProposedFare(Number(e.target.value)); }}
-              className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+              className="w-full h-3 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
             />
           </div>
 
           {/* Slider 3: KM to Customer (Pickup) */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
               <span>Pickup Distance (KM)</span>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handleGPS}
-                  className="flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-1 px-2 rounded hover:bg-blue-500/20 transition-colors"
+                  className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-1.5 px-3 rounded-[10px] hover:bg-blue-500/20 transition-colors font-bold"
                 >
-                  <MapPin className="w-3 h-3" />
+                  <MapPin className="w-4 h-4" />
                   {gpsLoading ? 'Locating...' : 'Use GPS'}
                 </button>
-                <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-amber-500 font-mono font-bold">{pickupDistance} km</span>
+                <span className="bg-gray-900 border border-white/10 py-1.5 px-3 rounded-[10px] text-amber-400 font-mono font-bold">{pickupDistance} km</span>
               </div>
             </div>
             <input
@@ -213,31 +213,31 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
               step="0.5"
               value={pickupDistance}
               onChange={(e) => { triggerClick(); setPickupDistance(Number(e.target.value)); }}
-              className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+              className="w-full h-3 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
             />
           </div>
 
           {/* Advanced Settings Toggle */}
-          <div className="pt-2">
+          <div className="pt-3">
             <button 
               onClick={() => { triggerClick(); setShowAdvanced(!showAdvanced); }}
-              className="w-full flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-black text-zinc-300 uppercase tracking-wide hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center justify-between p-4 bg-gray-800 border border-white/10 rounded-[14px] text-[13px] font-black text-gray-300 uppercase tracking-wide hover:bg-gray-750 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Settings className="w-4 h-4 text-zinc-400" />
+              <div className="flex items-center gap-2.5">
+                <Settings className="w-5 h-5 text-gray-400" />
                 Advanced Settings
               </div>
-              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showAdvanced ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
           </div>
 
           {/* Advanced Settings Content */}
           {showAdvanced && (
-            <div className="space-y-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg mt-2">
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+            <div className="space-y-5 p-5 bg-gray-800/50 border border-white/5 rounded-[16px] mt-3">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
                   <span>App Commission (%)</span>
-                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{platformFee}%</span>
+                  <span className="bg-gray-900 border border-white/10 py-1.5 px-3 rounded-[10px] text-white font-mono">{platformFee}%</span>
                 </div>
                 <input
                   type="range"
@@ -246,14 +246,14 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
                   step="1"
                   value={platformFee}
                   onChange={(e) => { triggerClick(); setPlatformFee(Number(e.target.value)); }}
-                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                  className="w-full h-2.5 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
                   <span>Service Cost Per KM</span>
-                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{currency}{maintenanceCostPerKm}</span>
+                  <span className="bg-gray-900 border border-white/10 py-1.5 px-3 rounded-[10px] text-white font-mono">{currency}{maintenanceCostPerKm}</span>
                 </div>
                 <input
                   type="range"
@@ -262,14 +262,14 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
                   step="0.1"
                   value={maintenanceCostPerKm}
                   onChange={(e) => { triggerClick(); setMaintenanceCostPerKm(Number(e.target.value)); }}
-                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                  className="w-full h-2.5 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[13px] font-black text-gray-400 uppercase">
                   <span>Target Profit Margin</span>
-                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{targetMargin}%</span>
+                  <span className="bg-gray-900 border border-white/10 py-1.5 px-3 rounded-[10px] text-white font-mono">{targetMargin}%</span>
                 </div>
                 <input
                   type="range"
@@ -278,7 +278,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
                   step="5"
                   value={targetMargin}
                   onChange={(e) => { triggerClick(); setTargetMargin(Number(e.target.value)); }}
-                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                  className="w-full h-2.5 bg-gray-900 rounded-full appearance-none cursor-pointer accent-green-500"
                 />
               </div>
             </div>
@@ -287,76 +287,76 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
       </div>
 
       {/* Diagnostics / Verdict Panel */}
-      <div className="lg:col-span-6 space-y-4 flex flex-col justify-between" id="quick_offer_diagnostics_results">
+      <div className="lg:col-span-6 space-y-5 flex flex-col justify-between" id="quick_offer_diagnostics_results">
         
         {/* Dynamic Verdict banner */}
-        <div className={`p-4 rounded-xl border flex items-start gap-3.5 ${diagnostics.verdictColor}`} id="calc_verdict_pill">
+        <div className={`p-5 rounded-[18px] border flex items-start gap-4 ${diagnostics.verdictColor}`} id="calc_verdict_pill">
           {diagnostics.icon}
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-sm font-black uppercase tracking-wide">{diagnostics.verdictTitle}</h4>
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded font-mono ${diagnostics.badgeColor}`}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h4 className="text-[16px] font-black uppercase tracking-wide">{diagnostics.verdictTitle}</h4>
+              <span className={`text-[12px] font-black uppercase px-2.5 py-1 rounded font-mono ${diagnostics.badgeColor}`}>
                 {diagnostics.marginPercent.toFixed(0)}% Margin
               </span>
             </div>
-            <p className="text-xs opacity-90 mt-1 leading-normal text-zinc-300">{diagnostics.verdictDesc}</p>
+            <p className="text-[13px] opacity-90 mt-1.5 leading-relaxed">{diagnostics.verdictDesc}</p>
           </div>
         </div>
 
         {/* Expenses and Take Home Breakdown card */}
-        <div className="p-5 bg-zinc-950 border border-zinc-900 rounded-xl shadow-sm flex-1 flex flex-col justify-between" id="calc_financial_card">
-          <div className="space-y-4">
-            <div className="flex justify-between items-start pb-3 border-b border-zinc-900">
+        <div className="p-6 bg-gray-700 border border-white/10 rounded-[20px] shadow-md flex-1 flex flex-col justify-between" id="calc_financial_card">
+          <div className="space-y-5">
+            <div className="flex justify-between items-start pb-4 border-b border-white/10">
               <div>
-                <span className="text-xs font-black text-zinc-500 uppercase">Your Profit (Clear Money)</span>
-                <span className={`text-3xl font-black font-mono block mt-1 ${diagnostics.netEarnings >= 0 ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`}>
+                <span className="text-[13px] font-black text-gray-400 uppercase">Your Profit (Clear Money)</span>
+                <span className={`text-[36px] font-black font-mono block mt-1 leading-none ${diagnostics.netEarnings >= 0 ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`}>
                   {diagnostics.netEarnings >= 0 ? '+' : '-'}{currency}{Math.abs(diagnostics.netEarnings).toFixed(2)}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xs font-black text-zinc-500 uppercase block">Profit per KM</span>
-                <span className="text-lg font-black font-mono text-green-400 block mt-1 glow-green">
+                <span className="text-[13px] font-black text-gray-400 uppercase block">Profit per KM</span>
+                <span className="text-[22px] font-black font-mono text-green-400 block mt-1 glow-green">
                   {currency}{diagnostics.profitPerKm.toFixed(2)} / km
                 </span>
               </div>
             </div>
 
             {/* Exp Detail Breakdown */}
-            <div className="space-y-2 text-xs text-zinc-400 font-bold uppercase">
+            <div className="space-y-2.5 text-[13px] text-gray-400 font-bold uppercase">
               <div className="flex justify-between">
-                <span className="text-zinc-500">Ride Money (Gross Fare):</span>
-                <span className="font-mono text-zinc-200 font-black">+{currency}{proposedFare.toFixed(2)}</span>
+                <span className="text-gray-400">Ride Money (Gross Fare):</span>
+                <span className="font-mono text-white font-black">+{currency}{proposedFare.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-550">Fuel Cost ({diagnostics.totalDistWithDead.toFixed(1)} km):</span>
+                <span className="text-gray-500">Fuel Cost ({diagnostics.totalDistWithDead.toFixed(1)} km):</span>
                 <span className="font-mono text-red-400">-{currency}{diagnostics.fuelCost.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-550">App Cut Fee ({platformFee}%):</span>
+                <span className="text-gray-500">App Cut Fee ({platformFee}%):</span>
                 <span className="font-mono text-red-400">-{currency}{diagnostics.commissionCost.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-550">Bike/Car Service Cost:</span>
-                <span className="font-mono text-red-200">-{currency}{diagnostics.vehicleWearCost.toFixed(2)}</span>
+                <span className="text-gray-500">Bike/Car Service Cost:</span>
+                <span className="font-mono text-red-300">-{currency}{diagnostics.vehicleWearCost.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           {/* Pricing Threshold tips box */}
-          <div className="bg-zinc-900/40 p-4 border border-zinc-900 rounded-xl mt-4">
-            <h5 className="text-xs font-black text-zinc-300 uppercase mb-2 flex items-center gap-1">
-              <Flame className="w-4 h-4 text-amber-500" /> Minimum Price You Should Take
+          <div className="bg-gray-800/50 p-5 border border-white/5 rounded-[16px] mt-6">
+            <h5 className="text-[13px] font-black text-gray-300 uppercase mb-3 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-amber-500" /> Minimum Price You Should Take
             </h5>
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-2 gap-4 text-[13px]">
               <div>
-                <span className="text-[10px] text-zinc-500 block uppercase font-bold">Absolute Minimum Price</span>
-                <span className="font-mono text-zinc-200 font-black mt-0.5 block">{currency}{diagnostics.breakevenMinimumFare.toFixed(2)}</span>
-                <p className="text-[9px] text-zinc-500 mt-1 leading-normal">Any price below this is a complete cash loss for you</p>
+                <span className="text-[11px] text-gray-500 block uppercase font-bold">Absolute Minimum Price</span>
+                <span className="font-mono text-white text-[16px] font-black mt-1 block">{currency}{diagnostics.breakevenMinimumFare.toFixed(2)}</span>
+                <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">Any price below this is a complete cash loss for you</p>
               </div>
               <div>
-                <span className="text-[10px] text-zinc-500 block uppercase font-bold">Suggested Fair Price</span>
-                <span className="font-mono text-green-400 font-black mt-0.5 block glow-green">{currency}{diagnostics.suggestedProfitableMinimumFare.toFixed(2)}</span>
-                <p className="text-[9px] text-zinc-550 mt-1 leading-normal">This rate guarantees you make {targetMargin}% clear profit</p>
+                <span className="text-[11px] text-gray-500 block uppercase font-bold">Suggested Fair Price</span>
+                <span className="font-mono text-green-400 text-[16px] font-black mt-1 block glow-green">{currency}{diagnostics.suggestedProfitableMinimumFare.toFixed(2)}</span>
+                <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">This rate guarantees you make {targetMargin}% clear profit</p>
               </div>
             </div>
           </div>
