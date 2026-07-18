@@ -13,8 +13,13 @@ import {
   Plus,
   Car,
   Zap,
-  Bike
+  Bike,
+  User as UserIcon,
+  LogOut,
+  Mail,
+  Smartphone
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SettingsProps {
   rides: Ride[];
@@ -41,6 +46,9 @@ export default function Settings({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [personalKmInput, setPersonalKmInput] = useState<string>('');
   const [snoozedRecords, setSnoozedRecords] = useState<Set<string>>(new Set());
+
+  // Auth context
+  const { user, logout } = useAuth();
 
   // Odometer calculations
   const totalTrackedDistance = useMemo(() => getTotalDistanceTracked(rides), [rides]);
@@ -147,6 +155,42 @@ export default function Settings({
   return (
     <div className="space-y-6 mt-2 max-w-3xl mx-auto" id="settings_section">
       
+      {/* 0. USER PROFILE */}
+      {user && (
+        <div className="bg-gray-800 border border-white/10 rounded-[20px] overflow-hidden shadow-md">
+          <div className="bg-gray-700/50 p-5 border-b border-white/10 flex justify-between items-center">
+            <div>
+              <h3 className="text-[16px] font-black text-white uppercase tracking-wide">User Profile</h3>
+              <p className="text-[11px] text-gray-400 mt-1 font-bold uppercase">Account Management</p>
+            </div>
+            <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-[8px] text-[10px] font-black text-green-400 uppercase tracking-widest">
+              {user.provider} Login
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 bg-gray-900 border border-white/10 rounded-full flex items-center justify-center text-gray-500 shadow-inner">
+                <UserIcon className="w-8 h-8" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h4 className="text-[18px] font-black text-white leading-tight">{user.name}</h4>
+                {user.email && (
+                  <p className="text-[13px] font-medium text-gray-400 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" /> {user.email}
+                  </p>
+                )}
+                {user.mobile && (
+                  <p className="text-[13px] font-medium text-gray-400 flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5" /> {user.mobile}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. BASIC VEHICLE SETUP */}
       <div className="bg-gray-800 border border-white/10 rounded-[20px] overflow-hidden shadow-md">
         <div className="bg-gray-700/50 p-5 border-b border-white/10">
@@ -520,6 +564,24 @@ export default function Settings({
                 className="w-full sm:w-auto py-3.5 px-8 bg-red-950/30 text-red-400 border border-red-500/30 hover:bg-red-500/20 rounded-[14px] text-[11px] font-black uppercase cursor-pointer transition-colors"
               >
                 Clear My App Data
+              </button>
+            </div>
+
+            <div className="pt-6 border-t border-white/5">
+              <h4 className="text-[13px] font-black uppercase text-gray-300 flex items-center gap-2 mb-3">
+                <UserIcon className="w-5 h-5 text-gray-400 shrink-0" /> Account
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerClick();
+                  if (window.confirm("Are you sure you want to log out? Your ride data will remain safely stored on your device.")) {
+                    logout();
+                  }
+                }}
+                className="w-full sm:w-auto py-3.5 px-8 bg-gray-900 border border-white/10 hover:bg-gray-700 rounded-[14px] text-[11px] font-black uppercase text-white cursor-pointer transition-colors flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" /> Log Out
               </button>
             </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Ride, VehicleConfig, VEHICLE_PRESETS, VehicleType } from './types';
-import { BETA_ACCESS_CODE } from './config';
 import Dashboard from './components/Dashboard';
 import RideTracker from './components/RideTracker';
 import RideHistory from './components/RideHistory';
@@ -8,25 +8,23 @@ import Calculator from './components/Calculator';
 import Settings from './components/Settings';
 import NotificationCenter from './components/NotificationCenter';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import LoginPage from './components/auth/LoginPage';
+import SignupPage from './components/auth/SignupPage';
+import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
+import PhoneLoginPage from './components/auth/PhoneLoginPage';
+import OtpVerificationPage from './components/auth/OtpVerificationPage';
 import { useSmartNotifications } from './hooks/useSmartNotifications';
 import { getEstimatedOdometer } from './utils/maintenance';
 import { 
   Compass, 
   TrendingUp, 
-  PiggyBank, 
-  MapPin, 
   SlidersHorizontal, 
   History, 
   Settings as SettingsIcon, 
-  Sparkles,
-  Zap,
-  Navigation,
-  Car,
-  CheckCircle2,
-  AlertTriangle,
   Bell
 } from 'lucide-react';
-import { hasCriticalMaintenance } from './utils/maintenance';
 import { feedbackAudio, triggerHapticFeedback } from './utils/audio';
 
 const LOCAL_STORAGE_RIDES_KEY = 'rideprofit_rides_db';
@@ -36,28 +34,6 @@ const LOCAL_STORAGE_CURRENCY_KEY = 'rideprofit_currency';
 const INITIAL_DEMO_RIDES: Ride[] = [];
 
 function AppContent() {
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('rideprofit_beta_unlocked') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
-  const [accessCode, setAccessCode] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (accessCode.trim() === BETA_ACCESS_CODE) {
-      try {
-        localStorage.setItem('rideprofit_beta_unlocked', 'true');
-      } catch (err) {}
-      setIsUnlocked(true);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Invalid access code. Please contact app owner.');
-    }
-  };
 
   const [rides, setRides] = useState<Ride[]>(() => {
     try {
@@ -155,63 +131,6 @@ function AppContent() {
       return copy;
     });
   };
-
-  if (!isUnlocked) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans px-4 carbon-overlay selection:bg-green-500 selection:text-gray-900" id="access_frame">
-        <div className="max-w-md w-full bg-gray-800 border border-white/10 rounded-2xl p-8 shadow-2xl space-y-8 text-center">
-          
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-14 h-14 bg-green-500 rounded-xl flex items-center justify-center text-black font-black text-2xl shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-              RP
-            </div>
-            <div className="space-y-1">
-              <span className="font-black text-[28px] text-white tracking-tight block">RideProfit</span>
-              <p className="text-[14px] text-gray-400 font-bold uppercase tracking-wider">Beta Tester Access</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleUnlock} className="space-y-4 text-left">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-black text-green-400 uppercase tracking-wider">
-                Enter Beta Access Code
-              </label>
-              <input
-                type="text"
-                required
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                className="block w-full rounded-[18px] bg-gray-900 border border-white/10 p-5 text-center text-xl font-black tracking-widest text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                placeholder="••••••••••••"
-                autoFocus
-              />
-            </div>
-
-            {errorMsg && (
-              <div className="flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/20 p-4 rounded-[18px] text-[14px] font-bold" id="error_container">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full py-5 bg-green-500 hover:bg-green-400 active:scale-98 text-gray-900 rounded-[18px] font-black text-lg tracking-wide shadow-lg text-center flex items-center justify-center cursor-pointer transition-all"
-              id="btn_unlock_app"
-            >
-              UNLOCK APP
-            </button>
-          </form>
-
-          <div className="border-t border-white/10 pt-5 text-[13px] text-gray-500 space-y-1">
-            <p className="font-medium text-gray-400">🛡️ Privacy Guarantee</p>
-            <p>RideProfit Beta does not collect your personal information. Ride data stays on your phone.</p>
-          </div>
-
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col font-sans carbon-overlay selection:bg-green-500 selection:text-gray-900" id="app_frame">
@@ -367,8 +286,26 @@ function AppContent() {
 
 export default function App() {
   return (
-    <NotificationProvider>
-      <AppContent />
-    </NotificationProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <NotificationProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/phone-login" element={<PhoneLoginPage />} />
+            <Route path="/verify-otp" element={<OtpVerificationPage />} />
+            
+            <Route path="/app" element={
+              <ProtectedRoute>
+                <AppContent />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </Routes>
+        </NotificationProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
