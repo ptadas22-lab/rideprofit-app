@@ -5,8 +5,8 @@ import { feedbackAudio, triggerHapticFeedback } from '../utils/audio';
 import { 
   Plus, Trash2, Search, Clock, Calendar, X, 
   Filter, ArrowUpDown, Download, Edit2, Copy, Eye,
-  TrendingUp, Activity, Fuel, Zap, AlertOctagon, CheckCircle2,
-  Gauge, Car, Share2, FileText, Map, Navigation, Shield, Bike
+  TrendingUp, TrendingDown, Activity, Fuel, Zap, AlertOctagon, CheckCircle2,
+  Gauge, Car, Share2, FileText, Table, Map, Navigation, Shield, Bike
 } from 'lucide-react';
 import { RIDE_PROFILES } from '../config/rideProfiles';
 
@@ -504,7 +504,7 @@ export default function RideHistory({
 
             {/* Export Buttons (Future Architecture) */}
             <button onClick={handleComingSoon} className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Export PDF"><FileText className="w-4 h-4" /></button>
-            <button onClick={handleComingSoon} className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Export Excel"><FileSpreadsheet className="w-4 h-4" /></button>
+            <button onClick={handleComingSoon} className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Export Excel"><Table className="w-4 h-4" /></button>
           </div>
         </div>
       </div>
