@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
+import { hasCriticalMaintenance } from './utils/maintenance';
 
 const LOCAL_STORAGE_RIDES_KEY = 'rideprofit_rides_db';
 const LOCAL_STORAGE_VEHICLE_KEY = 'rideprofit_vehicle_db';
@@ -146,6 +147,7 @@ export default function App() {
 
   // Live total metrics highlight inside the header
   const totalSessionProfit = rides.reduce((acc, r) => acc + r.profit, 0);
+  const showMaintenanceAlert = hasCriticalMaintenance(vehicle, rides);
 
   if (!isUnlocked) {
     return (
@@ -236,7 +238,10 @@ export default function App() {
               </span>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 p-1 px-3 rounded-lg text-right hidden xs:block">
+            <div className="bg-zinc-900 border border-zinc-800 p-1 px-3 rounded-lg text-right hidden xs:block relative">
+              {showMaintenanceAlert && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-zinc-950 animate-pulse"></span>
+              )}
               <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">My Vehicle</span>
               <span className="text-xs font-black text-zinc-200 block truncate max-w-[100px]">
                 {vehicle.name.split(' ')[0]}
@@ -332,6 +337,7 @@ export default function App() {
 
           {activeTab === 'settings' && (
             <Settings 
+              rides={rides}
               vehicle={vehicle} 
               onVehicleChange={setVehicle} 
               currency={currency} 
