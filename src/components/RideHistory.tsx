@@ -39,6 +39,24 @@ export default function RideHistory({
   const [quickDeadKm, setQuickDeadKm] = useState('');
   const [quickDurationMins, setQuickDurationMins] = useState('');
   const [quickNotes, setQuickNotes] = useState('');
+  
+  // Quick Log Extras State
+  const [cabTips, setCabTips] = useState('');
+  const [cabTolls, setCabTolls] = useState('');
+  
+  const [autoWaitingTime, setAutoWaitingTime] = useState('');
+  const [autoFuelType, setAutoFuelType] = useState('Petrol');
+  
+  const [bikeOrders, setBikeOrders] = useState('');
+  const [bikePlatform, setBikePlatform] = useState('Rapido');
+  
+  const [deliveryOrders, setDeliveryOrders] = useState('');
+  const [deliveryPickup, setDeliveryPickup] = useState('');
+  const [deliveryDrop, setDeliveryDrop] = useState('');
+  const [deliveryPlatform, setDeliveryPlatform] = useState('Swiggy');
+  
+  const [personalPurpose, setPersonalPurpose] = useState('');
+  const [personalExpense, setPersonalExpense] = useState('');
 
   const triggerClick = () => {
     feedbackAudio.playClickSound();
@@ -54,7 +72,7 @@ export default function RideHistory({
     e.preventDefault();
     triggerSuccess();
 
-    const earn = parseFloat(quickEarnings) || 0;
+    const earn = quickPlatform === 'Personal' ? 0 : (parseFloat(quickEarnings) || 0);
     const dist = parseFloat(quickDistance) || 0;
     const dead = parseFloat(quickDeadKm) || 0;
     const durationMins = parseFloat(quickDurationMins) || 15;
@@ -63,6 +81,19 @@ export default function RideHistory({
     const totalFuelUsed = totalDist / (vehicle.mileage || 1);
     const calculatedFuelCost = totalFuelUsed * vehicle.fuelPrice;
     const netProfit = earn - calculatedFuelCost;
+
+    let rideExtras: any = undefined;
+    if (quickPlatform === 'Cab Ride') {
+      if (cabTips || cabTolls) rideExtras = { tips: parseFloat(cabTips) || 0, tollCharges: parseFloat(cabTolls) || 0 };
+    } else if (quickPlatform === 'Auto Ride') {
+      rideExtras = { waitingTimeMins: parseFloat(autoWaitingTime) || 0, fuelType: autoFuelType };
+    } else if (quickPlatform === 'Bike Ride') {
+      rideExtras = { ordersCompleted: parseInt(bikeOrders) || 0, platform: bikePlatform };
+    } else if (quickPlatform === 'Delivery Ride') {
+      rideExtras = { ordersCompleted: parseInt(deliveryOrders) || 0, pickupDistance: parseFloat(deliveryPickup) || 0, deliveryDistance: parseFloat(deliveryDrop) || 0, platform: deliveryPlatform };
+    } else if (quickPlatform === 'Personal') {
+      rideExtras = { tripPurpose: personalPurpose, tripExpense: parseFloat(personalExpense) || 0 };
+    }
 
     const newRide: Ride = {
       id: `ride_${Date.now()}`,
@@ -79,7 +110,8 @@ export default function RideHistory({
       profit: parseFloat(netProfit.toFixed(2)),
       vehicleType: vehicle.type,
       notes: quickNotes.trim() || undefined,
-      hasGPSPath: false
+      hasGPSPath: false,
+      rideExtras
     };
 
     onRideLogged(newRide);
@@ -91,6 +123,13 @@ export default function RideHistory({
     setQuickDeadKm('');
     setQuickDurationMins('');
     setQuickNotes('');
+    
+    // Reset Extras Form
+    setCabTips(''); setCabTolls('');
+    setAutoWaitingTime(''); setAutoFuelType('Petrol');
+    setBikeOrders(''); setBikePlatform('Rapido');
+    setDeliveryOrders(''); setDeliveryPickup(''); setDeliveryDrop(''); setDeliveryPlatform('Swiggy');
+    setPersonalPurpose(''); setPersonalExpense('');
   };
 
   // Filter rides
@@ -183,11 +222,15 @@ export default function RideHistory({
                 type="number"
                 step="any"
                 required
+                disabled={quickPlatform === 'Personal'}
                 placeholder="0.00"
-                value={quickEarnings}
+                value={quickPlatform === 'Personal' ? '0' : quickEarnings}
                 onChange={(e) => setQuickEarnings(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-white text-xs font-black font-mono"
+                className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-white text-xs font-black font-mono disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {quickPlatform === 'Personal' && (
+                <p className="text-[9px] text-amber-500 font-bold mt-1">Personal trip — no earnings.</p>
+              )}
             </div>
 
             {/* Active Distance */}
@@ -231,7 +274,7 @@ export default function RideHistory({
             </div>
 
             {/* Notes */}
-            <div className="md:col-span-10 space-y-1">
+            <div className="md:col-span-12 space-y-1">
               <label className="block text-[10px] font-black text-zinc-400 uppercase">Notes (Optional)</label>
               <input
                 type="text"
@@ -241,6 +284,92 @@ export default function RideHistory({
                 className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black"
               />
             </div>
+
+            {/* Ride Extras Render for Quick Log */}
+            {quickPlatform === 'Cab Ride' && (
+              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Tips ({currency})</label>
+                  <input type="number" step="any" value={cabTips} onChange={e => setCabTips(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Tolls ({currency})</label>
+                  <input type="number" step="any" value={cabTolls} onChange={e => setCabTolls(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+              </div>
+            )}
+            
+            {quickPlatform === 'Auto Ride' && (
+              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Wait Time (Min)</label>
+                  <input type="number" step="any" value={autoWaitingTime} onChange={e => setAutoWaitingTime(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Fuel Type</label>
+                  <select value={autoFuelType} onChange={e => setAutoFuelType(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
+                    <option value="Petrol">Petrol</option>
+                    <option value="CNG">CNG</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {quickPlatform === 'Bike Ride' && (
+              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Orders / Drops</label>
+                  <input type="number" step="1" value={bikeOrders} onChange={e => setBikeOrders(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Platform</label>
+                  <select value={bikePlatform} onChange={e => setBikePlatform(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
+                    <option value="Rapido">Rapido</option>
+                    <option value="Uber Moto">Uber Moto</option>
+                    <option value="Ola Bike">Ola Bike</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {quickPlatform === 'Delivery Ride' && (
+              <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-zinc-900">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Orders</label>
+                  <input type="number" step="1" value={deliveryOrders} onChange={e => setDeliveryOrders(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Platform</label>
+                  <select value={deliveryPlatform} onChange={e => setDeliveryPlatform(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
+                    <option value="Swiggy">Swiggy</option>
+                    <option value="Zomato">Zomato</option>
+                    <option value="Blinkit">Blinkit</option>
+                    <option value="Porter">Porter</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Pickup Dist</label>
+                  <input type="number" step="any" value={deliveryPickup} onChange={e => setDeliveryPickup(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Drop Dist</label>
+                  <input type="number" step="any" value={deliveryDrop} onChange={e => setDeliveryDrop(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+              </div>
+            )}
+            
+            {quickPlatform === 'Personal' && (
+              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Trip Purpose</label>
+                  <input type="text" value={personalPurpose} onChange={e => setPersonalPurpose(e.target.value)} placeholder="e.g. Groceries" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Trip Expense ({currency})</label>
+                  <input type="number" step="any" value={personalExpense} onChange={e => setPersonalExpense(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+                </div>
+              </div>
+            )}
 
             <div className="md:col-span-2 flex items-end">
               <button
@@ -311,8 +440,9 @@ export default function RideHistory({
             return (
               <div 
                 key={ride.id}
-                className="bg-zinc-950 rounded-xl border border-zinc-900 p-4 flex flex-col md:flex-row justify-between gap-4"
+                className="bg-zinc-950 rounded-xl border border-zinc-900 p-4 flex flex-col gap-4"
               >
+                <div className="flex flex-col md:flex-row justify-between gap-4 w-full">
                 {/* App & Notes */}
                 <div className="flex gap-3 items-start shrink-0">
                   <div className={`py-1.5 px-3 rounded-lg border text-[10px] font-black uppercase ${getPlatformColors(ride.platform)}`}>
@@ -390,7 +520,26 @@ export default function RideHistory({
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+                </div>
 
+                {/* Optional Ride Extras Section */}
+                {ride.rideExtras && Object.keys(ride.rideExtras).length > 0 && (
+                  <div className="border-t border-zinc-900 pt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase text-zinc-300">
+                    {ride.rideExtras.tips > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Tips: <span className="text-green-400">{currency}{ride.rideExtras.tips}</span></span>}
+                    {ride.rideExtras.tollCharges > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Tolls: <span className="text-red-400">{currency}{ride.rideExtras.tollCharges}</span></span>}
+                    
+                    {ride.rideExtras.waitingTimeMins > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Wait: <span className="text-zinc-100">{ride.rideExtras.waitingTimeMins} Min</span></span>}
+                    {ride.rideExtras.fuelType && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Fuel: <span className="text-zinc-100">{ride.rideExtras.fuelType}</span></span>}
+                    
+                    {ride.rideExtras.ordersCompleted > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Orders: <span className="text-emerald-400">{ride.rideExtras.ordersCompleted}</span></span>}
+                    {ride.rideExtras.platform && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Platform: <span className="text-zinc-100">{ride.rideExtras.platform}</span></span>}
+                    {ride.rideExtras.pickupDistance > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Pickup: <span className="text-zinc-100">{ride.rideExtras.pickupDistance} KM</span></span>}
+                    {ride.rideExtras.deliveryDistance > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Drop: <span className="text-zinc-100">{ride.rideExtras.deliveryDistance} KM</span></span>}
+                    
+                    {ride.rideExtras.tripPurpose && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Purpose: <span className="text-zinc-100">{ride.rideExtras.tripPurpose}</span></span>}
+                    {ride.rideExtras.tripExpense > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Expense: <span className="text-red-400">{currency}{ride.rideExtras.tripExpense}</span></span>}
+                  </div>
+                )}
               </div>
             );
           })

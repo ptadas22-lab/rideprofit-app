@@ -78,6 +78,24 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     return localStorage.getItem('rideprofit_active_ride_notes') || '';
   });
 
+  // Ride Extras State
+  const [cabTips, setCabTips] = useState('');
+  const [cabTolls, setCabTolls] = useState('');
+  
+  const [autoWaitingTime, setAutoWaitingTime] = useState('');
+  const [autoFuelType, setAutoFuelType] = useState('Petrol');
+  
+  const [bikeOrders, setBikeOrders] = useState('');
+  const [bikePlatform, setBikePlatform] = useState('Rapido');
+  
+  const [deliveryOrders, setDeliveryOrders] = useState('');
+  const [deliveryPickup, setDeliveryPickup] = useState('');
+  const [deliveryDrop, setDeliveryDrop] = useState('');
+  const [deliveryPlatform, setDeliveryPlatform] = useState('Swiggy');
+  
+  const [personalPurpose, setPersonalPurpose] = useState('');
+  const [personalExpense, setPersonalExpense] = useState('');
+
   // Timers and Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const geoWatchIdRef = useRef<number | null>(null);
@@ -407,8 +425,16 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     const baseRate = approxFares[platform] || 10;
     const suggestedEarning = (distanceKm * baseRate) + (platform === 'Personal' ? 0 : 5);
     
-    setFinalEarnings(suggestedEarning > 0 ? Math.round(suggestedEarning).toString() : '0');
+    setFinalEarnings(platform === 'Personal' ? '0' : (suggestedEarning > 0 ? Math.round(suggestedEarning).toString() : '0'));
     setRideNotes('');
+    
+    // Reset extra fields
+    setCabTips(''); setCabTolls('');
+    setAutoWaitingTime(''); setAutoFuelType('Petrol');
+    setBikeOrders(''); setBikePlatform('Rapido');
+    setDeliveryOrders(''); setDeliveryPickup(''); setDeliveryDrop(''); setDeliveryPlatform('Swiggy');
+    setPersonalPurpose(''); setPersonalExpense('');
+    
     setShowEndModal(true);
   };
 
@@ -428,11 +454,24 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     e.preventDefault();
     triggerStartSequence(); // Satisfying click
 
-    const earningsVal = parseFloat(finalEarnings) || 0;
+    const earningsVal = platform === 'Personal' ? 0 : (parseFloat(finalEarnings) || 0);
     const totalDist = distanceKm + deadKm;
     const totalFuelUsed = totalDist / (vehicle.mileage || 1);
     const calculatedFuelCost = totalFuelUsed * vehicle.fuelPrice;
     const netProfit = earningsVal - calculatedFuelCost;
+
+    let rideExtras: any = undefined;
+    if (platform === 'Cab Ride') {
+      if (cabTips || cabTolls) rideExtras = { tips: parseFloat(cabTips) || 0, tollCharges: parseFloat(cabTolls) || 0 };
+    } else if (platform === 'Auto Ride') {
+      rideExtras = { waitingTimeMins: parseFloat(autoWaitingTime) || 0, fuelType: autoFuelType };
+    } else if (platform === 'Bike Ride') {
+      rideExtras = { ordersCompleted: parseInt(bikeOrders) || 0, platform: bikePlatform };
+    } else if (platform === 'Delivery Ride') {
+      rideExtras = { ordersCompleted: parseInt(deliveryOrders) || 0, pickupDistance: parseFloat(deliveryPickup) || 0, deliveryDistance: parseFloat(deliveryDrop) || 0, platform: deliveryPlatform };
+    } else if (platform === 'Personal') {
+      rideExtras = { tripPurpose: personalPurpose, tripExpense: parseFloat(personalExpense) || 0 };
+    }
 
     const loggedRide: Ride = {
       id: `ride_${Date.now()}`,
@@ -449,7 +488,8 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
       profit: parseFloat(netProfit.toFixed(2)),
       vehicleType: vehicle.type,
       notes: rideNotes.trim() || undefined,
-      hasGPSPath: gpsCoordinates.length > 0
+      hasGPSPath: gpsCoordinates.length > 0,
+      rideExtras
     };
 
     onRideLogged(loggedRide);
@@ -688,17 +728,114 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                     type="number"
                     step="any"
                     required
-                    value={finalEarnings}
+                    disabled={platform === 'Personal'}
+                    value={platform === 'Personal' ? '0' : finalEarnings}
                     onChange={(e) => setFinalEarnings(e.target.value)}
-                    className="pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-green-500"
+                    className="pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="0.00"
-                    autoFocus
+                    autoFocus={platform !== 'Personal'}
                   />
                 </div>
-                <p className="text-xs text-zinc-500 font-bold">
-                  Fuel cost was: {currency}{estimatedFuelCost.toFixed(2)}
-                </p>
+                {platform === 'Personal' ? (
+                  <p className="text-xs text-amber-500 font-bold">
+                    Personal trip — earnings not applicable.
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-500 font-bold">
+                    Fuel cost was: {currency}{estimatedFuelCost.toFixed(2)}
+                  </p>
+                )}
               </div>
+
+              {/* Ride Extras Options based on Platform */}
+              {platform === 'Cab Ride' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Tips ({currency})</label>
+                    <input type="number" step="any" value={cabTips} onChange={e => setCabTips(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Tolls ({currency})</label>
+                    <input type="number" step="any" value={cabTolls} onChange={e => setCabTolls(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                </div>
+              )}
+
+              {platform === 'Auto Ride' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Wait Time (Min)</label>
+                    <input type="number" step="any" value={autoWaitingTime} onChange={e => setAutoWaitingTime(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Fuel Type</label>
+                    <select value={autoFuelType} onChange={e => setAutoFuelType(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
+                      <option value="Petrol">Petrol</option>
+                      <option value="CNG">CNG</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {platform === 'Bike Ride' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Orders / Drops</label>
+                    <input type="number" step="1" value={bikeOrders} onChange={e => setBikeOrders(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Platform</label>
+                    <select value={bikePlatform} onChange={e => setBikePlatform(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
+                      <option value="Rapido">Rapido</option>
+                      <option value="Uber Moto">Uber Moto</option>
+                      <option value="Ola Bike">Ola Bike</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {platform === 'Delivery Ride' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Orders</label>
+                      <input type="number" step="1" value={deliveryOrders} onChange={e => setDeliveryOrders(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Platform</label>
+                      <select value={deliveryPlatform} onChange={e => setDeliveryPlatform(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
+                        <option value="Swiggy">Swiggy</option>
+                        <option value="Zomato">Zomato</option>
+                        <option value="Blinkit">Blinkit</option>
+                        <option value="Porter">Porter</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Pickup Dist (KM)</label>
+                      <input type="number" step="any" value={deliveryPickup} onChange={e => setDeliveryPickup(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Drop Dist (KM)</label>
+                      <input type="number" step="any" value={deliveryDrop} onChange={e => setDeliveryDrop(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {platform === 'Personal' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Trip Purpose</label>
+                    <input type="text" value={personalPurpose} onChange={e => setPersonalPurpose(e.target.value)} placeholder="e.g. Groceries" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Trip Expense ({currency})</label>
+                    <input type="number" step="any" value={personalExpense} onChange={e => setPersonalExpense(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+                  </div>
+                </div>
+              )}
 
               {/* Ride Notes */}
               <div className="space-y-1">
