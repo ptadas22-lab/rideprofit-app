@@ -427,6 +427,45 @@ export default function Settings({
               </div>
             </div>
 
+            {/* Notification Settings */}
+            <div className="pt-4 border-t border-zinc-900">
+              <h4 className="text-[10px] font-black uppercase text-zinc-500 mb-3">Notification Preferences</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { id: 'maintenance', label: 'Maintenance Reminders' },
+                  { id: 'profitAlerts', label: 'Profit Alerts' },
+                  { id: 'rideInsights', label: 'Ride Insights' },
+                  { id: 'vehicleDocuments', label: 'Vehicle Documents' },
+                  { id: 'systemUpdates', label: 'System Updates' },
+                  { id: 'pushNotifications', label: 'Push Notifications (Coming Soon)' }
+                ].map(setting => {
+                  const currentSettings = vehicle.notificationSettings || {
+                    maintenance: true, profitAlerts: true, rideInsights: true,
+                    vehicleDocuments: true, systemUpdates: true, pushNotifications: false
+                  };
+                  const isChecked = currentSettings[setting.id as keyof typeof currentSettings];
+                  
+                  return (
+                    <label key={setting.id} className="flex items-center gap-2 cursor-pointer bg-black p-2.5 rounded-lg border border-zinc-900 hover:border-zinc-700 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={!!isChecked}
+                        disabled={setting.id === 'pushNotifications'}
+                        onChange={(e) => {
+                          const newSettings = { ...currentSettings, [setting.id]: e.target.checked };
+                          onVehicleChange({ ...vehicle, notificationSettings: newSettings });
+                        }}
+                        className="w-4 h-4 rounded bg-zinc-900 border-zinc-700 text-green-500 focus:ring-green-500 focus:ring-offset-zinc-950 cursor-pointer disabled:opacity-50"
+                      />
+                      <span className={`text-[10px] font-black uppercase ${setting.id === 'pushNotifications' ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                        {setting.label}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-900">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-zinc-400 uppercase">Service Cost Per KM ({currency})</label>

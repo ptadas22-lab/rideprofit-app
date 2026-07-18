@@ -6,6 +6,10 @@ import RideTracker from './components/RideTracker';
 import RideHistory from './components/RideHistory';
 import Calculator from './components/Calculator';
 import Settings from './components/Settings';
+import NotificationCenter from './components/NotificationCenter';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
+import { useSmartNotifications } from './hooks/useSmartNotifications';
+import { getEstimatedOdometer } from './utils/maintenance';
 import { 
   Compass, 
   TrendingUp, 
@@ -19,18 +23,19 @@ import {
   Navigation,
   Car,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Bell
 } from 'lucide-react';
 import { hasCriticalMaintenance } from './utils/maintenance';
+import { feedbackAudio, triggerHapticFeedback } from './utils/audio';
 
 const LOCAL_STORAGE_RIDES_KEY = 'rideprofit_rides_db';
 const LOCAL_STORAGE_VEHICLE_KEY = 'rideprofit_vehicle_db';
 const LOCAL_STORAGE_CURRENCY_KEY = 'rideprofit_currency';
 
-// Prepopulate standard realistic starter dataset so drivers instantly understand performance metrics
 const INITIAL_DEMO_RIDES: Ride[] = [];
 
-export default function App() {
+function AppContent() {
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
       return localStorage.getItem('rideprofit_beta_unlocked') === 'true';
@@ -54,13 +59,11 @@ export default function App() {
     }
   };
 
-  // 1. Initial configuration loader
   const [rides, setRides] = useState<Ride[]>(() => {
     try {
       const persisted = localStorage.getItem(LOCAL_STORAGE_RIDES_KEY);
       if (persisted) {
         const parsed = JSON.parse(persisted);
-        // Migrate old trademark platform names to generic ones
         return parsed.map((r: any) => ({
           ...r,
           platform: r.platform === 'Uber' ? 'Cab Ride'
@@ -73,7 +76,6 @@ export default function App() {
     } catch (e) {
       console.warn('LocalStorage reads failed:', e);
     }
-    // Return sample starter ride ledger for pristine styling demonstration
     return INITIAL_DEMO_RIDES;
   });
 
@@ -86,13 +88,12 @@ export default function App() {
     } catch (e) {
       console.warn('LocalStorage reads failed:', e);
     }
-    // Default vehicle preset: car_petrol (Universal and responsive)
     return {
       type: 'car_petrol',
       name: VEHICLE_PRESETS.car_petrol.name,
       mileage: VEHICLE_PRESETS.car_petrol.mileage,
       fuelUnit: VEHICLE_PRESETS.car_petrol.fuelUnit,
-      fuelPrice: 96.50 // Standard competitive default pricing
+      fuelPrice: 96.50
     };
   });
 
@@ -104,35 +105,26 @@ export default function App() {
     }
   });
 
-  // Navigation tab switcher page state
   const [activeTab, setActiveTab] = useState<'tracker' | 'dashboard' | 'calculator' | 'history' | 'settings'>('tracker');
 
-  // Sync to database
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_RIDES_KEY, JSON.stringify(rides));
-    } catch (e) {
-      console.error('LocalStorage write failed:', e);
-    }
+    } catch (e) {}
   }, [rides]);
 
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_VEHICLE_KEY, JSON.stringify(vehicle));
-    } catch (e) {
-      console.error('LocalStorage write failed:', e);
-    }
+    } catch (e) {}
   }, [vehicle]);
 
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_CURRENCY_KEY, currency);
-    } catch (e) {
-      console.error('LocalStorage write failed:', e);
-    }
+    } catch (e) {}
   }, [currency]);
 
-  // Methods
   const handleRideLogged = (newRide: Ride) => {
     setRides(prev => [...prev, newRide]);
   };
@@ -145,16 +137,30 @@ export default function App() {
     setRides([]);
   };
 
-  // Live total metrics highlight inside the header
   const totalSessionProfit = rides.reduce((acc, r) => acc + r.profit, 0);
-  const showMaintenanceAlert = hasCriticalMaintenance(vehicle, rides);
+
+  // Notifications Integration
+  const { unreadCount, setIsCenterOpen } = useNotifications();
+  useSmartNotifications(vehicle, rides);
+
+  const handleCompleteMaintenance = (recordId: string) => {
+    const estimated = getEstimatedOdometer(vehicle, rides);
+    setVehicle(prev => {
+      const copy = { ...prev };
+      if (copy.maintenanceRecords) {
+        copy.maintenanceRecords = copy.maintenanceRecords.map(rec => 
+          rec.id === recordId ? { ...rec, lastServicedOdometer: estimated } : rec
+        );
+      }
+      return copy;
+    });
+  };
 
   if (!isUnlocked) {
     return (
       <div className="min-h-screen bg-black text-zinc-100 flex flex-col items-center justify-center font-sans px-4 carbon-overlay selection:bg-green-500 selection:text-zinc-950" id="access_frame">
         <div className="max-w-md w-full bg-zinc-950 border border-zinc-900 rounded-2xl p-6 shadow-xl space-y-6 text-center">
           
-          {/* Logo & Header */}
           <div className="flex flex-col items-center gap-2">
             <div className="w-14 h-14 bg-green-500 rounded-xl flex items-center justify-center text-black font-black text-2xl shadow-[0_0_15px_rgba(34,197,94,0.3)]">
               RP
@@ -197,7 +203,6 @@ export default function App() {
             </button>
           </form>
 
-          {/* Privacy Note */}
           <div className="border-t border-zinc-900 pt-4 text-xs text-zinc-500 space-y-1">
             <p className="font-medium text-zinc-400">🛡️ Privacy Guarantee</p>
             <p>RideProfit Beta does not collect your personal information. Ride data stays on your phone.</p>
@@ -211,11 +216,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans carbon-overlay selection:bg-green-500 selection:text-zinc-950" id="app_frame">
       
-      {/* Sticky Driver Header */}
       <header className="sticky top-0 z-50 bg-zinc-950/95 border-b border-zinc-900 shadow-md" id="main_driver_header">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           
-          {/* Logo & Platform Name */}
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-black font-black text-xl shadow-[0_0_10px_rgba(34,197,94,0.2)]">
               RP
@@ -229,33 +232,37 @@ export default function App() {
             </div>
           </div>
 
-          {/* Quick HUD Metrics (Today's Profit & Vehicle) */}
           <div className="flex items-center gap-2.5">
-            <div className="bg-zinc-900 border border-zinc-800 p-1 px-3 rounded-lg text-right">
+            <div className="bg-zinc-900 border border-zinc-800 p-1 px-3 rounded-lg text-right hidden xs:block">
               <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Today's Profit</span>
               <span className={`text-base font-black font-mono ${totalSessionProfit >= 0 ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`}>
                 {totalSessionProfit >= 0 ? '' : '-'}{currency}{Math.abs(totalSessionProfit).toFixed(2)}
               </span>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 p-1 px-3 rounded-lg text-right hidden xs:block relative">
-              {showMaintenanceAlert && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-zinc-950 animate-pulse"></span>
+            {/* Notification Bell */}
+            <button
+              onClick={() => {
+                feedbackAudio.playClickSound();
+                triggerHapticFeedback(40);
+                setIsCenterOpen(true);
+              }}
+              className="relative p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-zinc-950 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
-              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">My Vehicle</span>
-              <span className="text-xs font-black text-zinc-200 block truncate max-w-[100px]">
-                {vehicle.name.split(' ')[0]}
-              </span>
-            </div>
+            </button>
           </div>
 
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-3 py-4 flex flex-col gap-4" id="main_payload">
         
-        {/* Navigation Tabs - Massive and easy to tap while driving */}
         <div className="flex overflow-x-auto gap-2 no-scrollbar pt-1 sticky top-[65px] bg-black/95 z-40 py-2 rounded-xl px-1 border border-zinc-900" id="tabs_navigation">
           {[
             { id: 'tracker', label: 'Start Ride', icon: <Compass className="w-5 h-5" /> },
@@ -270,7 +277,6 @@ export default function App() {
                 key={tab.id}
                 onClick={() => {
                   try {
-                    // Play subtle feedback beep
                     const context = new (window.AudioContext || (window as any).webkitAudioContext)();
                     const osc = context.createOscillator();
                     const gain = context.createGain();
@@ -299,7 +305,6 @@ export default function App() {
           })}
         </div>
 
-        {/* Dynamic Inner Window Payload */}
         <div className="flex-1 pb-16" id="inner_panel_content">
           {activeTab === 'tracker' && (
             <RideTracker 
@@ -345,16 +350,25 @@ export default function App() {
             />
           )}
         </div>
-
       </main>
 
-      {/* Embedded footer block - humble professional metadata */}
       <footer className="mt-auto border-t border-zinc-900 py-4 bg-zinc-950" id="main_driver_footer">
         <div className="max-w-7xl mx-auto px-4 text-center text-xs text-zinc-500 font-medium">
           <p>© 2026 RideProfit Dashboard. Made to help taxi, auto, bike, and delivery riders know their real earnings.</p>
         </div>
       </footer>
 
+      {/* Renders Over App View */}
+      <NotificationCenter onCompleteMaintenance={handleCompleteMaintenance} />
+
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 }

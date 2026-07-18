@@ -18,6 +18,7 @@ export interface VehicleConfig {
   baseOdometer?: number;
   lastOdometerUpdate?: string; // ISO string
   maintenanceRecords?: MaintenanceRecord[];
+  notificationSettings?: NotificationSettings;
 }
 
 export interface Ride {
@@ -143,3 +144,27 @@ export const VEHICLE_PRESETS: Record<VehicleType, Omit<VehicleConfig, 'fuelPrice
     fuelUnit: 'kWh',
   },
 };
+
+export type NotificationPriority = 'critical' | 'warning' | 'info' | 'success';
+export type NotificationCategory = 'Maintenance' | 'Profit' | 'Ride' | 'Vehicle' | 'System';
+export type NotificationStatus = 'unread' | 'read' | 'completed';
+
+export interface AppNotification {
+  id: string;
+  category: NotificationCategory;
+  priority: NotificationPriority;
+  title: string;
+  description: string;
+  timestamp: string; // ISO string
+  status: NotificationStatus;
+  referenceId?: string; // Links back to maintenance record id, ride id, etc.
+}
+
+export interface NotificationSettings {
+  maintenance: boolean;
+  profitAlerts: boolean;
+  rideInsights: boolean;
+  vehicleDocuments: boolean;
+  systemUpdates: boolean;
+  pushNotifications: boolean;
+}
