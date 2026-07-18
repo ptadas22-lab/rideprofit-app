@@ -29,6 +29,9 @@ export interface RideProfile {
   categoryLabel: string;
   categories: RideCategory[];
   dynamicFields: DynamicField[];
+  commissionPercentage: number;
+  serviceCostPerKm: number;
+  targetProfitMargin: number;
 }
 
 export const RIDE_PROFILES: Record<string, RideProfile> = {
@@ -56,7 +59,10 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
     dynamicFields: [
       { id: 'tips', label: 'Tips', type: 'number' },
       { id: 'tollCharges', label: 'Toll Charges', type: 'number' }
-    ]
+    ],
+    commissionPercentage: 25,
+    serviceCostPerKm: 1.5,
+    targetProfitMargin: 40
   },
   'Auto Ride': {
     id: 'Auto Ride',
@@ -81,7 +87,10 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
     dynamicFields: [
       { id: 'waitingTimeMins', label: 'Waiting Time', type: 'number', suffix: 'Min' },
       { id: 'fuelType', label: 'Fuel Type', type: 'select', options: ['Petrol', 'CNG'] }
-    ]
+    ],
+    commissionPercentage: 20,
+    serviceCostPerKm: 0.8,
+    targetProfitMargin: 45
   },
   'Bike Ride': {
     id: 'Bike Ride',
@@ -105,7 +114,10 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
     ],
     dynamicFields: [
       { id: 'ordersCompleted', label: 'Orders Completed', type: 'number' }
-    ]
+    ],
+    commissionPercentage: 20,
+    serviceCostPerKm: 0.4,
+    targetProfitMargin: 50
   },
   'Delivery Ride': {
     id: 'Delivery Ride',
@@ -133,7 +145,10 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
       { id: 'ordersCompleted', label: 'Orders Completed', type: 'number' },
       { id: 'pickupDistance', label: 'Pickup Distance', type: 'number', suffix: 'KM' },
       { id: 'deliveryDistance', label: 'Delivery Distance', type: 'number', suffix: 'KM' }
-    ]
+    ],
+    commissionPercentage: 20,
+    serviceCostPerKm: 0.4,
+    targetProfitMargin: 50
   },
   'Personal': {
     id: 'Personal',
@@ -160,7 +175,10 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
     ],
     dynamicFields: [
       { id: 'tripExpense', label: 'Trip Expense', type: 'number' }
-    ]
+    ],
+    commissionPercentage: 0,
+    serviceCostPerKm: 1.0,
+    targetProfitMargin: 0
   },
   'Custom': {
     id: 'Custom',
@@ -176,6 +194,9 @@ export const RIDE_PROFILES: Record<string, RideProfile> = {
     version: '1.0',
     categoryLabel: 'Category',
     categories: [],
-    dynamicFields: []
+    dynamicFields: [],
+    commissionPercentage: 20,
+    serviceCostPerKm: 1.0,
+    targetProfitMargin: 40
   }
 };

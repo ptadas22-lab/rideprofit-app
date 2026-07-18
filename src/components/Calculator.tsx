@@ -1,12 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { VehicleConfig } from '../types';
+import { RIDE_PROFILES } from '../config/rideProfiles';
 import { feedbackAudio, triggerHapticFeedback } from '../utils/audio';
 import { 
   Flame, 
   Sliders, 
   CheckCircle2, 
   AlertOctagon,
-  Gauge
+  Gauge,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  MapPin
 } from 'lucide-react';
 
 interface CalculatorProps {
@@ -15,22 +20,50 @@ interface CalculatorProps {
 }
 
 export default function Calculator({ vehicle, currency }: CalculatorProps) {
+  const [platform] = useState<string>(() => {
+    return localStorage.getItem('rideprofit_active_platform') || 'Cab Ride';
+  });
+
+  const activeProfile = RIDE_PROFILES[platform] || RIDE_PROFILES['Cab Ride'];
+
   // Input parameters for quick calculation
   const [distance, setDistance] = useState<number>(8); // 8 km offer
   const [proposedFare, setProposedFare] = useState<number>(150); // 150 currency
-  const [deadKmPercent, setDeadKmPercent] = useState<number>(20); // 20% dead km
-  const [platformFee, setPlatformFee] = useState<number>(20); // 20% platform commission fee
-  const [maintenanceCostPerKm, setMaintenanceCostPerKm] = useState<number>(0.5); // 0.5 currency unit per km (wear & tear)
+  const [pickupDistance, setPickupDistance] = useState<number>(2); // 2 km pickup
+  
+  // Advanced Settings with defaults from profile
+  const [platformFee, setPlatformFee] = useState<number>(activeProfile.commissionPercentage);
+  const [maintenanceCostPerKm, setMaintenanceCostPerKm] = useState<number>(activeProfile.serviceCostPerKm);
+  const [targetMargin, setTargetMargin] = useState<number>(activeProfile.targetProfitMargin);
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  // Sync when platform profile changes (if component stays mounted)
+  useEffect(() => {
+    setPlatformFee(activeProfile.commissionPercentage);
+    setMaintenanceCostPerKm(activeProfile.serviceCostPerKm);
+    setTargetMargin(activeProfile.targetProfitMargin);
+  }, [activeProfile.commissionPercentage, activeProfile.serviceCostPerKm, activeProfile.targetProfitMargin]);
 
   const triggerClick = () => {
     feedbackAudio.playClickSound();
     triggerHapticFeedback(30);
   };
 
+  const handleGPS = () => {
+    triggerClick();
+    setGpsLoading(true);
+    // Simulate GPS location finding
+    setTimeout(() => {
+      setPickupDistance(2.5); // Mocked realistic distance
+      setGpsLoading(false);
+    }, 800);
+  };
+
   // Live Math engine
   const diagnostics = useMemo(() => {
-    const totalDistWithDead = distance * (1 + deadKmPercent / 100);
-    const deadKmValue = distance * (deadKmPercent / 100);
+    const totalDistWithDead = distance + pickupDistance;
 
     // Fuel cost calculations
     const fuelUsed = totalDistWithDead / (vehicle.mileage || 1);
@@ -53,12 +86,15 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
     const profitPerKm = distance > 0 ? netEarnings / distance : 0;
 
     // Minimum breakeven rates
-    const fuelCostOnlyPerKm = (vehicle.fuelPrice / (vehicle.mileage || 1)) * (1 + deadKmPercent / 100);
-    const wearCostPerKm = maintenanceCostPerKm * (1 + deadKmPercent / 100);
-    const costPerKmBase = fuelCostOnlyPerKm + wearCostPerKm;
+    const costPerKmBase = ((vehicle.fuelPrice / (vehicle.mileage || 1)) + maintenanceCostPerKm) * (totalDistWithDead / (distance || 1));
     const minFarePerKmWithPlatform = costPerKmBase / (1 - platformFee / 100);
     const breakevenMinimumFare = minFarePerKmWithPlatform * distance;
-    const suggestedProfitableMinimumFare = (costPerKmBase * 1.6) / (1 - platformFee / 100) * distance;
+    
+    // Suggested Fare using Target Profit Margin
+    let combinedCut = (targetMargin / 100) + (platformFee / 100);
+    if (combinedCut >= 1) combinedCut = 0.95; // prevent division by zero or negative
+    
+    const suggestedProfitableMinimumFare = (fuelCost + vehicleWearCost) / (1 - combinedCut);
 
     // Calculate Verdict Category
     let verdictTitle = 'Loss! Do NOT Take.';
@@ -67,9 +103,9 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
     let badgeColor = 'bg-red-650 text-white';
     let icon = <AlertOctagon className="w-8 h-8 text-red-550 shrink-0" />;
 
-    if (netEarnings > 0 && marginPercent >= 40) {
+    if (netEarnings > 0 && marginPercent >= targetMargin) {
       verdictTitle = 'Good Offer! Take it.';
-      verdictDesc = 'This is a very profitable ride! You will keep more than 40% of the fare. Accept it quickly!';
+      verdictDesc = `This is a very profitable ride! You will keep more than ${targetMargin}% of the fare. Accept it quickly!`;
       verdictColor = 'bg-green-500/5 border-green-500/35 text-green-200';
       badgeColor = 'bg-green-500 text-black';
       icon = <CheckCircle2 className="w-8 h-8 text-green-400 shrink-0" />;
@@ -83,7 +119,6 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
 
     return {
       totalDistWithDead,
-      deadKmValue,
       fuelUsed,
       fuelCost,
       commissionCost,
@@ -100,7 +135,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
       badgeColor,
       icon
     };
-  }, [distance, proposedFare, deadKmPercent, platformFee, maintenanceCostPerKm, vehicle]);
+  }, [distance, pickupDistance, proposedFare, platformFee, maintenanceCostPerKm, targetMargin, vehicle]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-2" id="fare_profit_calculator">
@@ -109,7 +144,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
       <div className="lg:col-span-6 p-5 bg-zinc-950 border border-zinc-900 rounded-xl space-y-5" id="quick_offer_settings">
         <div>
           <h3 className="text-sm font-black text-zinc-100 uppercase tracking-wide flex items-center gap-1.5">
-            <Sliders className="w-5 h-5 text-green-400" /> Offer Profit Checker
+            <Sliders className="w-5 h-5 text-green-400" /> Smart Profit Checker
           </h3>
           <p className="text-xs text-zinc-500 mt-0.5">Check if a ride offer is profitable or a loss before accepting</p>
         </div>
@@ -118,7 +153,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
           {/* Slider 1: Customer KM */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
-              <span>Customer KM (Ride Distance)</span>
+              <span>Ride Distance (KM)</span>
               <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{distance} km</span>
             </div>
             <input
@@ -134,7 +169,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
           {/* Slider 2: Proposed Fare */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
-              <span>Money Offered (Fare Price)</span>
+              <span>Offered Fare</span>
               <div className="flex items-center gap-1">
                 <span className="text-zinc-550 text-xs font-bold">{currency}</span>
                 <input
@@ -159,59 +194,95 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
           {/* Slider 3: KM to Customer (Pickup) */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
-              <span>KM to Customer (Pickup)</span>
-              <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-amber-500 font-mono font-bold">{deadKmPercent}% extra KM</span>
+              <span>Pickup Distance (KM)</span>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleGPS}
+                  className="flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-1 px-2 rounded hover:bg-blue-500/20 transition-colors"
+                >
+                  <MapPin className="w-3 h-3" />
+                  {gpsLoading ? 'Locating...' : 'Use GPS'}
+                </button>
+                <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-amber-500 font-mono font-bold">{pickupDistance} km</span>
+              </div>
             </div>
             <input
               type="range"
               min="0"
-              max="100"
-              step="5"
-              value={deadKmPercent}
-              onChange={(e) => { triggerClick(); setDeadKmPercent(Number(e.target.value)); }}
-              className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <p className="text-[10px] text-zinc-500 font-bold uppercase">
-              Adds {diagnostics.deadKmValue.toFixed(1)} km unpaid driving to reach customer
-            </p>
-          </div>
-
-          {/* Slider 4: App Commission Cut */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
-              <span>App Cut (Commission %)</span>
-              <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{platformFee}% cut</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="40"
-              step="1"
-              value={platformFee}
-              onChange={(e) => { triggerClick(); setPlatformFee(Number(e.target.value)); }}
+              max="20"
+              step="0.5"
+              value={pickupDistance}
+              onChange={(e) => { triggerClick(); setPickupDistance(Number(e.target.value)); }}
               className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
             />
           </div>
 
-          {/* Slider 5: Vehicle wear and tear cost */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
-              <span>Service Cost (Oil/Tire wear)</span>
-              <span className="bg-zinc-900 border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{currency}{maintenanceCostPerKm} / km</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.1"
-              value={maintenanceCostPerKm}
-              onChange={(e) => { triggerClick(); setMaintenanceCostPerKm(Number(e.target.value)); }}
-              className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <p className="text-[10px] text-zinc-500 font-bold uppercase">
-              Covers tire wear, engine oil, and general bike/car service savings
-            </p>
+          {/* Advanced Settings Toggle */}
+          <div className="pt-2">
+            <button 
+              onClick={() => { triggerClick(); setShowAdvanced(!showAdvanced); }}
+              className="w-full flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-black text-zinc-300 uppercase tracking-wide hover:bg-zinc-800 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-zinc-400" />
+                Advanced Settings
+              </div>
+              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
+
+          {/* Advanced Settings Content */}
+          {showAdvanced && (
+            <div className="space-y-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg mt-2">
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+                  <span>App Commission (%)</span>
+                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{platformFee}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="1"
+                  value={platformFee}
+                  onChange={(e) => { triggerClick(); setPlatformFee(Number(e.target.value)); }}
+                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+                  <span>Service Cost Per KM</span>
+                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{currency}{maintenanceCostPerKm}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={maintenanceCostPerKm}
+                  onChange={(e) => { triggerClick(); setMaintenanceCostPerKm(Number(e.target.value)); }}
+                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs font-black text-zinc-400 uppercase">
+                  <span>Target Profit Margin</span>
+                  <span className="bg-black border border-zinc-800 py-1 px-2.5 rounded text-white font-mono">{targetMargin}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={targetMargin}
+                  onChange={(e) => { triggerClick(); setTargetMargin(Number(e.target.value)); }}
+                  className="w-full h-2 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-green-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -285,7 +356,7 @@ export default function Calculator({ vehicle, currency }: CalculatorProps) {
               <div>
                 <span className="text-[10px] text-zinc-500 block uppercase font-bold">Suggested Fair Price</span>
                 <span className="font-mono text-green-400 font-black mt-0.5 block glow-green">{currency}{diagnostics.suggestedProfitableMinimumFare.toFixed(2)}</span>
-                <p className="text-[9px] text-zinc-550 mt-1 leading-normal">This rate guarantees you make 40% clear profit</p>
+                <p className="text-[9px] text-zinc-550 mt-1 leading-normal">This rate guarantees you make {targetMargin}% clear profit</p>
               </div>
             </div>
           </div>
