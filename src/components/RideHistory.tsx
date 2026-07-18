@@ -2,14 +2,8 @@ import React, { useState } from 'react';
 import { Ride, VehicleConfig } from '../types';
 import { formatDistance, formatDuration } from '../utils/geo';
 import { feedbackAudio, triggerHapticFeedback } from '../utils/audio';
-import { 
-  Plus, 
-  Trash2, 
-  Search, 
-  Clock, 
-  Calendar,
-  X
-} from 'lucide-react';
+import { Plus, Trash2, Search, Clock, Calendar, X } from 'lucide-react';
+import { RIDE_PROFILES } from '../config/rideProfiles';
 
 interface RideHistoryProps {
   rides: Ride[];
@@ -40,23 +34,29 @@ export default function RideHistory({
   const [quickDurationMins, setQuickDurationMins] = useState('');
   const [quickNotes, setQuickNotes] = useState('');
   
-  // Quick Log Extras State
-  const [cabTips, setCabTips] = useState('');
-  const [cabTolls, setCabTolls] = useState('');
-  
-  const [autoWaitingTime, setAutoWaitingTime] = useState('');
-  const [autoFuelType, setAutoFuelType] = useState('Petrol');
-  
-  const [bikeOrders, setBikeOrders] = useState('');
-  const [bikePlatform, setBikePlatform] = useState('Rapido');
-  
-  const [deliveryOrders, setDeliveryOrders] = useState('');
-  const [deliveryPickup, setDeliveryPickup] = useState('');
-  const [deliveryDrop, setDeliveryDrop] = useState('');
-  const [deliveryPlatform, setDeliveryPlatform] = useState('Swiggy');
-  
-  const [personalPurpose, setPersonalPurpose] = useState('');
-  const [personalExpense, setPersonalExpense] = useState('');
+  // Dynamic Fields State
+  const [quickCategory, setQuickCategory] = useState('');
+  const [dynamicFields, setDynamicFields] = useState<Record<string, any>>({});
+
+  // When quick platform changes, reset category and dynamic fields
+  React.useEffect(() => {
+    const profile = RIDE_PROFILES[quickPlatform];
+    if (profile && profile.categories.length > 0) {
+      setQuickCategory(profile.categories[0].id);
+    } else {
+      setQuickCategory('');
+    }
+    
+    const defaultFields: Record<string, any> = {};
+    if (profile && profile.dynamicFields) {
+      profile.dynamicFields.forEach(f => {
+        if (f.type === 'select' && f.options && f.options.length > 0) {
+          defaultFields[f.id] = f.options[0];
+        }
+      });
+    }
+    setDynamicFields(defaultFields);
+  }, [quickPlatform]);
 
   const triggerClick = () => {
     feedbackAudio.playClickSound();
@@ -72,7 +72,8 @@ export default function RideHistory({
     e.preventDefault();
     triggerSuccess();
 
-    const earn = quickPlatform === 'Personal' ? 0 : (parseFloat(quickEarnings) || 0);
+    const profile = RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Custom'];
+    const earn = !profile.showEarnings ? 0 : (parseFloat(quickEarnings) || 0);
     const dist = parseFloat(quickDistance) || 0;
     const dead = parseFloat(quickDeadKm) || 0;
     const durationMins = parseFloat(quickDurationMins) || 15;
@@ -81,19 +82,6 @@ export default function RideHistory({
     const totalFuelUsed = totalDist / (vehicle.mileage || 1);
     const calculatedFuelCost = totalFuelUsed * vehicle.fuelPrice;
     const netProfit = earn - calculatedFuelCost;
-
-    let rideExtras: any = undefined;
-    if (quickPlatform === 'Cab Ride') {
-      if (cabTips || cabTolls) rideExtras = { tips: parseFloat(cabTips) || 0, tollCharges: parseFloat(cabTolls) || 0 };
-    } else if (quickPlatform === 'Auto Ride') {
-      rideExtras = { waitingTimeMins: parseFloat(autoWaitingTime) || 0, fuelType: autoFuelType };
-    } else if (quickPlatform === 'Bike Ride') {
-      rideExtras = { ordersCompleted: parseInt(bikeOrders) || 0, platform: bikePlatform };
-    } else if (quickPlatform === 'Delivery Ride') {
-      rideExtras = { ordersCompleted: parseInt(deliveryOrders) || 0, pickupDistance: parseFloat(deliveryPickup) || 0, deliveryDistance: parseFloat(deliveryDrop) || 0, platform: deliveryPlatform };
-    } else if (quickPlatform === 'Personal') {
-      rideExtras = { tripPurpose: personalPurpose, tripExpense: parseFloat(personalExpense) || 0 };
-    }
 
     const newRide: Ride = {
       id: `ride_${Date.now()}`,
@@ -111,7 +99,8 @@ export default function RideHistory({
       vehicleType: vehicle.type,
       notes: quickNotes.trim() || undefined,
       hasGPSPath: false,
-      rideExtras
+      rideCategory: profile.showRideCategory ? quickCategory : undefined,
+      dynamicFields: Object.keys(dynamicFields).length > 0 ? dynamicFields : undefined
     };
 
     onRideLogged(newRide);
@@ -123,13 +112,7 @@ export default function RideHistory({
     setQuickDeadKm('');
     setQuickDurationMins('');
     setQuickNotes('');
-    
-    // Reset Extras Form
-    setCabTips(''); setCabTolls('');
-    setAutoWaitingTime(''); setAutoFuelType('Petrol');
-    setBikeOrders(''); setBikePlatform('Rapido');
-    setDeliveryOrders(''); setDeliveryPickup(''); setDeliveryDrop(''); setDeliveryPlatform('Swiggy');
-    setPersonalPurpose(''); setPersonalExpense('');
+    setDynamicFields({});
   };
 
   // Filter rides
@@ -154,23 +137,7 @@ export default function RideHistory({
     }
   };
 
-  // Styling helper for platform badges
-  const getPlatformColors = (plat: Ride['platform']) => {
-    switch (plat) {
-      case 'Cab Ride':
-        return 'bg-zinc-900 text-zinc-100 border-zinc-800';
-      case 'Auto Ride':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'Bike Ride':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'Delivery Ride':
-        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-      case 'Custom':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      default:
-        return 'bg-zinc-800 text-zinc-400 border-zinc-700';
-    }
-  };
+  // No longer using getPlatformColors since we have RIDE_PROFILES config
 
   return (
     <div className="space-y-4" id="history_ledger_section">
@@ -209,11 +176,30 @@ export default function RideHistory({
                 onChange={(e) => setQuickPlatform(e.target.value as Ride['platform'])}
                 className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer"
               >
-                {(['Cab Ride', 'Auto Ride', 'Bike Ride', 'Delivery Ride', 'Custom', 'Personal'] as const).map(p => (
-                  <option key={p} className="bg-zinc-950" value={p}>{p}</option>
+                {Object.values(RIDE_PROFILES).map(p => (
+                  <option key={p.id} className="bg-zinc-950" value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
+
+            {/* Dynamic Ride Category */}
+            {(() => {
+              const profile = RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Custom'];
+              return profile.showRideCategory ? (
+                <div className="md:col-span-3 space-y-1">
+                  <label className="block text-[10px] font-black text-zinc-400 uppercase">{profile.categoryLabel}</label>
+                  <select
+                    value={quickCategory}
+                    onChange={(e) => setQuickCategory(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer"
+                  >
+                    {profile.categories.map(c => (
+                      <option key={c.id} className="bg-zinc-950" value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : <div className="md:col-span-3"></div>;
+            })()}
 
             {/* Earnings */}
             <div className="md:col-span-2 space-y-1">
@@ -222,20 +208,20 @@ export default function RideHistory({
                 type="number"
                 step="any"
                 required
-                disabled={quickPlatform === 'Personal'}
+                disabled={!(RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Cab Ride']).showEarnings}
                 placeholder="0.00"
-                value={quickPlatform === 'Personal' ? '0' : quickEarnings}
+                value={!(RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Cab Ride']).showEarnings ? '0' : quickEarnings}
                 onChange={(e) => setQuickEarnings(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-white text-xs font-black font-mono disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              {quickPlatform === 'Personal' && (
-                <p className="text-[9px] text-amber-500 font-bold mt-1">Personal trip — no earnings.</p>
+              {!(RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Cab Ride']).showEarnings && (
+                <p className="text-[9px] text-amber-500 font-bold mt-1">No commercial earnings.</p>
               )}
             </div>
 
             {/* Active Distance */}
             <div className="md:col-span-2 space-y-1">
-              <label className="block text-[10px] font-black text-zinc-400 uppercase">Earning KM</label>
+              <label className="block text-[10px] font-black text-zinc-400 uppercase">{(RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Cab Ride']).showDeadKm ? 'Earning KM' : 'Distance'}</label>
               <input
                 type="number"
                 step="any"
@@ -248,17 +234,19 @@ export default function RideHistory({
             </div>
 
             {/* Dead Distance */}
-            <div className="md:col-span-2 space-y-1">
-              <label className="block text-[10px] font-black text-zinc-400 uppercase">Non-Earning KM</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="0.00"
-                value={quickDeadKm}
-                onChange={(e) => setQuickDeadKm(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-white text-xs font-black font-mono"
-              />
-            </div>
+            {(RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Cab Ride']).showDeadKm && (
+              <div className="md:col-span-2 space-y-1">
+                <label className="block text-[10px] font-black text-zinc-400 uppercase">Non-Earning KM</label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="0.00"
+                  value={quickDeadKm}
+                  onChange={(e) => setQuickDeadKm(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-white text-xs font-black font-mono"
+                />
+              </div>
+            )}
 
             {/* Duration */}
             <div className="md:col-span-3 space-y-1">
@@ -285,91 +273,53 @@ export default function RideHistory({
               />
             </div>
 
-            {/* Ride Extras Render for Quick Log */}
-            {quickPlatform === 'Cab Ride' && (
-              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Tips ({currency})</label>
-                  <input type="number" step="any" value={cabTips} onChange={e => setCabTips(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
+            {/* Dynamic Fields generated strictly from Ride Profile Config */}
+            {(() => {
+              const profile = RIDE_PROFILES[quickPlatform] || RIDE_PROFILES['Custom'];
+              if (!profile.dynamicFields || profile.dynamicFields.length === 0) return null;
+              
+              return (
+                <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-zinc-900">
+                  {profile.dynamicFields.map(field => (
+                    <div key={field.id} className="space-y-1">
+                      <label className="block text-[10px] font-black text-zinc-400 uppercase">
+                        {field.label} {field.type === 'currency' ? `(${currency})` : ''}
+                      </label>
+                      {field.type === 'select' ? (
+                        <select
+                          value={dynamicFields[field.id] || ''}
+                          onChange={(e) => setDynamicFields(prev => ({ ...prev, [field.id]: e.target.value }))}
+                          className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer"
+                        >
+                          {field.options?.map(opt => (
+                            <option key={opt} className="bg-zinc-950" value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            type={field.type === 'number' ? 'number' : 'text'}
+                            step={field.type === 'number' ? 'any' : undefined}
+                            value={dynamicFields[field.id] || ''}
+                            onChange={(e) => setDynamicFields(prev => ({ 
+                              ...prev, 
+                              [field.id]: field.type === 'number' ? (parseFloat(e.target.value) || e.target.value) : e.target.value 
+                            }))}
+                            placeholder={field.placeholder || "0"}
+                            className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black"
+                          />
+                          {field.suffix && (
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <span className="text-[10px] text-zinc-500 font-black uppercase">{field.suffix}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Tolls ({currency})</label>
-                  <input type="number" step="any" value={cabTolls} onChange={e => setCabTolls(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-              </div>
-            )}
-            
-            {quickPlatform === 'Auto Ride' && (
-              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Wait Time (Min)</label>
-                  <input type="number" step="any" value={autoWaitingTime} onChange={e => setAutoWaitingTime(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Fuel Type</label>
-                  <select value={autoFuelType} onChange={e => setAutoFuelType(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
-                    <option value="Petrol">Petrol</option>
-                    <option value="CNG">CNG</option>
-                  </select>
-                </div>
-              </div>
-            )}
-            
-            {quickPlatform === 'Bike Ride' && (
-              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Orders / Drops</label>
-                  <input type="number" step="1" value={bikeOrders} onChange={e => setBikeOrders(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Platform</label>
-                  <select value={bikePlatform} onChange={e => setBikePlatform(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
-                    <option value="Rapido">Rapido</option>
-                    <option value="Uber Moto">Uber Moto</option>
-                    <option value="Ola Bike">Ola Bike</option>
-                  </select>
-                </div>
-              </div>
-            )}
-            
-            {quickPlatform === 'Delivery Ride' && (
-              <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-zinc-900">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Orders</label>
-                  <input type="number" step="1" value={deliveryOrders} onChange={e => setDeliveryOrders(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Platform</label>
-                  <select value={deliveryPlatform} onChange={e => setDeliveryPlatform(e.target.value)} className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black cursor-pointer">
-                    <option value="Swiggy">Swiggy</option>
-                    <option value="Zomato">Zomato</option>
-                    <option value="Blinkit">Blinkit</option>
-                    <option value="Porter">Porter</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Pickup Dist</label>
-                  <input type="number" step="any" value={deliveryPickup} onChange={e => setDeliveryPickup(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Drop Dist</label>
-                  <input type="number" step="any" value={deliveryDrop} onChange={e => setDeliveryDrop(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-              </div>
-            )}
-            
-            {quickPlatform === 'Personal' && (
-              <div className="md:col-span-12 grid grid-cols-2 gap-3 pt-2 border-t border-zinc-900">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Trip Purpose</label>
-                  <input type="text" value={personalPurpose} onChange={e => setPersonalPurpose(e.target.value)} placeholder="e.g. Groceries" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black text-zinc-400 uppercase">Trip Expense ({currency})</label>
-                  <input type="number" step="any" value={personalExpense} onChange={e => setPersonalExpense(e.target.value)} placeholder="0" className="w-full p-2.5 rounded-lg border border-zinc-900 bg-black text-zinc-200 text-xs font-black" />
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div className="md:col-span-2 flex items-end">
               <button
@@ -445,9 +395,16 @@ export default function RideHistory({
                 <div className="flex flex-col md:flex-row justify-between gap-4 w-full">
                 {/* App & Notes */}
                 <div className="flex gap-3 items-start shrink-0">
-                  <div className={`py-1.5 px-3 rounded-lg border text-[10px] font-black uppercase ${getPlatformColors(ride.platform)}`}>
-                    {ride.platform}
-                  </div>
+                  {(() => {
+                    const profile = RIDE_PROFILES[ride.platform] || RIDE_PROFILES['Custom'];
+                    const ProfileIcon = profile.icon;
+                    return (
+                      <div className={`py-1.5 px-3 rounded-lg border text-[10px] font-black uppercase flex items-center gap-1.5 ${profile.badgeClass}`}>
+                        <ProfileIcon className="w-3 h-3" />
+                        {ride.platform}
+                      </div>
+                    );
+                  })()}
                   <div>
                     <h4 className="font-black text-zinc-200 text-xs uppercase flex items-center gap-1.5 flex-wrap">
                       Ride Done
@@ -469,19 +426,21 @@ export default function RideHistory({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 max-w-2xl px-0 md:px-4 text-xs font-black uppercase">
                   {/* Paid Distance */}
                   <div>
-                    <span className="text-[10px] font-bold text-zinc-550 block">Earning KM</span>
+                    <span className="text-[10px] font-bold text-zinc-550 block">{(RIDE_PROFILES[ride.platform] || RIDE_PROFILES['Cab Ride']).showDeadKm ? 'Earning KM' : 'Distance'}</span>
                     <span className="text-sm font-black text-zinc-200 font-mono">
                       {formatDistance(ride.distanceKm)}
                     </span>
                   </div>
 
                   {/* Unpaid Dead distance */}
-                  <div>
-                    <span className="text-[10px] font-bold text-zinc-550 block">Non-Earning KM</span>
-                    <span className={`text-sm font-black font-mono ${ride.deadKm > 0 ? 'text-amber-500' : 'text-zinc-500'}`}>
-                      {ride.deadKm > 0 ? `${ride.deadKm.toFixed(2)} km` : '0.00 km'}
-                    </span>
-                  </div>
+                  {(RIDE_PROFILES[ride.platform] || RIDE_PROFILES['Cab Ride']).showDeadKm && (
+                    <div>
+                      <span className="text-[10px] font-bold text-zinc-550 block">Non-Earning KM</span>
+                      <span className={`text-sm font-black font-mono ${ride.deadKm > 0 ? 'text-amber-500' : 'text-zinc-500'}`}>
+                        {ride.deadKm > 0 ? `${ride.deadKm.toFixed(2)} km` : '0.00 km'}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Travel duration and speed */}
                   <div>
@@ -522,24 +481,54 @@ export default function RideHistory({
                 </div>
                 </div>
 
-                {/* Optional Ride Extras Section */}
-                {ride.rideExtras && Object.keys(ride.rideExtras).length > 0 && (
-                  <div className="border-t border-zinc-900 pt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase text-zinc-300">
-                    {ride.rideExtras.tips > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Tips: <span className="text-green-400">{currency}{ride.rideExtras.tips}</span></span>}
-                    {ride.rideExtras.tollCharges > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Tolls: <span className="text-red-400">{currency}{ride.rideExtras.tollCharges}</span></span>}
-                    
-                    {ride.rideExtras.waitingTimeMins > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Wait: <span className="text-zinc-100">{ride.rideExtras.waitingTimeMins} Min</span></span>}
-                    {ride.rideExtras.fuelType && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Fuel: <span className="text-zinc-100">{ride.rideExtras.fuelType}</span></span>}
-                    
-                    {ride.rideExtras.ordersCompleted > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Orders: <span className="text-emerald-400">{ride.rideExtras.ordersCompleted}</span></span>}
-                    {ride.rideExtras.platform && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Platform: <span className="text-zinc-100">{ride.rideExtras.platform}</span></span>}
-                    {ride.rideExtras.pickupDistance > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Pickup: <span className="text-zinc-100">{ride.rideExtras.pickupDistance} KM</span></span>}
-                    {ride.rideExtras.deliveryDistance > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Drop: <span className="text-zinc-100">{ride.rideExtras.deliveryDistance} KM</span></span>}
-                    
-                    {ride.rideExtras.tripPurpose && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Purpose: <span className="text-zinc-100">{ride.rideExtras.tripPurpose}</span></span>}
-                    {ride.rideExtras.tripExpense > 0 && <span className="bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800">Expense: <span className="text-red-400">{currency}{ride.rideExtras.tripExpense}</span></span>}
-                  </div>
-                )}
+                {/* Optional Dynamic Ride Extras Section */}
+                {(() => {
+                  const profile = RIDE_PROFILES[ride.platform] || RIDE_PROFILES['Custom'];
+                  
+                  if (!ride.rideCategory && (!ride.dynamicFields || Object.keys(ride.dynamicFields).length === 0)) return null;
+                  
+                  const categoryObj = profile.categories?.find(c => c.id === ride.rideCategory);
+                  const displayLabel = categoryObj ? categoryObj.label : ride.rideCategory;
+
+                  return (
+                    <div className="border-t border-zinc-900 pt-3 mt-1 flex flex-col gap-2">
+                      {ride.rideCategory && (
+                        <div className="text-[10px] font-black uppercase text-zinc-500">
+                          {profile.categoryLabel}: <span className={profile.accentClass}>{displayLabel}</span>
+                        </div>
+                      )}
+                      
+                      {ride.dynamicFields && Object.keys(ride.dynamicFields).length > 0 && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          {Object.entries(ride.dynamicFields).map(([key, val]) => {
+                            if (!val || val === 0) return null; // hide empty values
+                            const fieldDef = profile.dynamicFields?.find(f => f.id === key);
+                            const label = fieldDef?.label || key;
+                            const prefix = fieldDef?.type === 'currency' ? currency : '';
+                            const suffix = fieldDef?.suffix ? ` ${fieldDef.suffix}` : '';
+                            
+                            return (
+                              <div key={key} className="text-xs font-black flex items-center gap-1.5 uppercase">
+                                <span className="text-zinc-500">{label}</span>
+                                <span className="text-zinc-200">
+                                  {prefix}{val}{suffix}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Personal Ride Specific Summary Overlays */}
+                          {!profile.showEarnings && (
+                            <div className="text-xs font-black flex items-center gap-1.5 uppercase">
+                              <span className="text-zinc-500">Mileage</span>
+                              <span className="text-purple-400">{ride.mileageAtTime} km/l</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })

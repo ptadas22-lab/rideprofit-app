@@ -24,7 +24,8 @@ export interface Ride {
   vehicleType: VehicleType;
   notes?: string;
   hasGPSPath: boolean;
-  rideExtras?: any;
+  rideCategory?: string;
+  dynamicFields?: any;
 }
 
 export interface TrackingSession {

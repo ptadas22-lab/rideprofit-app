@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { TrackingSession, VehicleConfig, Ride } from '../types';
+import { RIDE_PROFILES } from '../config/rideProfiles';
 import { calculateHaversineDistance, formatDistance, formatDuration } from '../utils/geo';
 
 const BackgroundGeolocation = registerPlugin<any>('BackgroundGeolocation');
@@ -78,23 +79,20 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     return localStorage.getItem('rideprofit_active_ride_notes') || '';
   });
 
-  // Ride Extras State
-  const [cabTips, setCabTips] = useState('');
-  const [cabTolls, setCabTolls] = useState('');
+  // Dynamic Profile Data State
+  const activeProfile = RIDE_PROFILES[platform] || RIDE_PROFILES['Cab Ride'];
   
-  const [autoWaitingTime, setAutoWaitingTime] = useState('');
-  const [autoFuelType, setAutoFuelType] = useState('Petrol');
-  
-  const [bikeOrders, setBikeOrders] = useState('');
-  const [bikePlatform, setBikePlatform] = useState('Rapido');
-  
-  const [deliveryOrders, setDeliveryOrders] = useState('');
-  const [deliveryPickup, setDeliveryPickup] = useState('');
-  const [deliveryDrop, setDeliveryDrop] = useState('');
-  const [deliveryPlatform, setDeliveryPlatform] = useState('Swiggy');
-  
-  const [personalPurpose, setPersonalPurpose] = useState('');
-  const [personalExpense, setPersonalExpense] = useState('');
+  const [rideCategory, setRideCategory] = useState(() => {
+    return localStorage.getItem('rideprofit_active_ride_category') || '';
+  });
+  const [dynamicFields, setDynamicFields] = useState<Record<string, any>>(() => {
+    try {
+      const saved = localStorage.getItem('rideprofit_active_dynamic_fields');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
   // Timers and Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,7 +108,21 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
 
   useEffect(() => {
     localStorage.setItem('rideprofit_active_platform', platform);
+    
+    // Auto-select first category when profile changes
+    const profile = RIDE_PROFILES[platform];
+    if (profile && profile.categories.length > 0 && !profile.categories.find(c => c.id === rideCategory)) {
+      setRideCategory(profile.categories[0].id);
+    }
   }, [platform]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_ride_category', rideCategory);
+  }, [rideCategory]);
+
+  useEffect(() => {
+    localStorage.setItem('rideprofit_active_dynamic_fields', JSON.stringify(dynamicFields));
+  }, [dynamicFields]);
 
   useEffect(() => {
     localStorage.setItem('rideprofit_active_duration_seconds', String(durationSeconds));
@@ -161,6 +173,8 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     localStorage.removeItem('rideprofit_active_final_earnings');
     localStorage.removeItem('rideprofit_active_ride_notes');
     localStorage.removeItem('rideprofit_active_start_time');
+    localStorage.removeItem('rideprofit_active_ride_category');
+    localStorage.removeItem('rideprofit_active_dynamic_fields');
   };
 
   // Sound effect helpers
@@ -423,17 +437,24 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     // to make driver experience frictionless
     const approxFares: Record<string, number> = { 'Cab Ride': 16, 'Auto Ride': 15, 'Bike Ride': 8, 'Delivery Ride': 12, Custom: 10, Personal: 0 };
     const baseRate = approxFares[platform] || 10;
-    const suggestedEarning = (distanceKm * baseRate) + (platform === 'Personal' ? 0 : 5);
+    const suggestedEarning = (distanceKm * baseRate) + (activeProfile.showEarnings ? 5 : 0);
     
-    setFinalEarnings(platform === 'Personal' ? '0' : (suggestedEarning > 0 ? Math.round(suggestedEarning).toString() : '0'));
+    setFinalEarnings(!activeProfile.showEarnings ? '0' : (suggestedEarning > 0 ? Math.round(suggestedEarning).toString() : '0'));
     setRideNotes('');
     
-    // Reset extra fields
-    setCabTips(''); setCabTolls('');
-    setAutoWaitingTime(''); setAutoFuelType('Petrol');
-    setBikeOrders(''); setBikePlatform('Rapido');
-    setDeliveryOrders(''); setDeliveryPickup(''); setDeliveryDrop(''); setDeliveryPlatform('Swiggy');
-    setPersonalPurpose(''); setPersonalExpense('');
+    // Ensure category is set
+    if (activeProfile.categories.length > 0 && !activeProfile.categories.find(c => c.id === rideCategory)) {
+      setRideCategory(activeProfile.categories[0].id);
+    }
+    
+    // Set default dynamic fields
+    const defaultFields: Record<string, any> = {};
+    activeProfile.dynamicFields.forEach(f => {
+      if (f.type === 'select' && f.options && f.options.length > 0) {
+        defaultFields[f.id] = f.options[0];
+      }
+    });
+    setDynamicFields(defaultFields);
     
     setShowEndModal(true);
   };
@@ -454,24 +475,11 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
     e.preventDefault();
     triggerStartSequence(); // Satisfying click
 
-    const earningsVal = platform === 'Personal' ? 0 : (parseFloat(finalEarnings) || 0);
+    const earningsVal = !activeProfile.showEarnings ? 0 : (parseFloat(finalEarnings) || 0);
     const totalDist = distanceKm + deadKm;
     const totalFuelUsed = totalDist / (vehicle.mileage || 1);
     const calculatedFuelCost = totalFuelUsed * vehicle.fuelPrice;
     const netProfit = earningsVal - calculatedFuelCost;
-
-    let rideExtras: any = undefined;
-    if (platform === 'Cab Ride') {
-      if (cabTips || cabTolls) rideExtras = { tips: parseFloat(cabTips) || 0, tollCharges: parseFloat(cabTolls) || 0 };
-    } else if (platform === 'Auto Ride') {
-      rideExtras = { waitingTimeMins: parseFloat(autoWaitingTime) || 0, fuelType: autoFuelType };
-    } else if (platform === 'Bike Ride') {
-      rideExtras = { ordersCompleted: parseInt(bikeOrders) || 0, platform: bikePlatform };
-    } else if (platform === 'Delivery Ride') {
-      rideExtras = { ordersCompleted: parseInt(deliveryOrders) || 0, pickupDistance: parseFloat(deliveryPickup) || 0, deliveryDistance: parseFloat(deliveryDrop) || 0, platform: deliveryPlatform };
-    } else if (platform === 'Personal') {
-      rideExtras = { tripPurpose: personalPurpose, tripExpense: parseFloat(personalExpense) || 0 };
-    }
 
     const loggedRide: Ride = {
       id: `ride_${Date.now()}`,
@@ -489,7 +497,8 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
       vehicleType: vehicle.type,
       notes: rideNotes.trim() || undefined,
       hasGPSPath: gpsCoordinates.length > 0,
-      rideExtras
+      rideCategory: activeProfile.showRideCategory ? rideCategory : undefined,
+      dynamicFields: Object.keys(dynamicFields).length > 0 ? dynamicFields : undefined
     };
 
     onRideLogged(loggedRide);
@@ -513,20 +522,25 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         <div>
           <label className="text-xs font-black text-green-400 uppercase tracking-wider">Ride Type</label>
           <div className="flex flex-wrap gap-2 mt-2" id="platform_pills">
-            {(['Cab Ride', 'Auto Ride', 'Bike Ride', 'Delivery Ride', 'Custom', 'Personal'] as const).map((p) => (
-              <button
-                key={p}
-                disabled={isTracking}
-                onClick={() => { triggerClick(); setPlatform(p); }}
-                className={`py-2.5 px-4 rounded-lg text-sm font-black cursor-pointer transition-all ${
-                  platform === p 
-                    ? 'bg-green-500 text-black shadow-md' 
-                    : 'bg-zinc-900 text-zinc-400 border border-zinc-800 disabled:opacity-30'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            {Object.values(RIDE_PROFILES).map((p) => {
+              if (p.id === 'Custom') return null; // Hide custom from active tracker list
+              const Icon = p.icon;
+              return (
+                <button
+                  key={p.id}
+                  disabled={isTracking}
+                  onClick={() => { triggerClick(); setPlatform(p.id); }}
+                  className={`py-2.5 px-4 rounded-xl text-sm font-black cursor-pointer flex items-center gap-2 transition-all border-b-2 ${
+                    platform === p.id 
+                      ? `bg-zinc-900 border-${p.color} ${p.accentClass} shadow-md` 
+                      : 'bg-zinc-950 text-zinc-500 border-zinc-900 hover:text-zinc-300 disabled:opacity-30 disabled:hover:text-zinc-500'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {p.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -542,39 +556,41 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         )}
 
         {/* HUD Grid Metrics */}
-        <div className="grid grid-cols-2 gap-4 pt-2" id="live_metrics_scrow">
+        <div className={`grid gap-4 pt-2 ${activeProfile.showDeadKm ? 'grid-cols-2' : 'grid-cols-2'}`} id="live_metrics_scrow">
           {/* Active Ride Distance */}
           <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
             <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <Navigation className="w-4 h-4 text-green-400" /> Earning KM
+              <Navigation className={`w-4 h-4 ${activeProfile.accentClass}`} /> {activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-black text-white font-mono glow-green">
+              <span className={`text-3xl sm:text-4xl font-black text-white font-mono ${activeProfile.accentClass.replace('text-', 'glow-')}`}>
                 {distanceKm.toFixed(2)}
               </span>
               <span className="text-xs text-zinc-500 font-bold">KM</span>
             </div>
-            <p className="text-[10px] text-zinc-500">With customer</p>
+            <p className="text-[10px] text-zinc-500">{activeProfile.showDeadKm ? 'With customer' : 'Total driven'}</p>
           </div>
 
-          {/* Unpaid Dead Distance */}
-          <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
-            <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <MapPinOff className="w-4 h-4 text-amber-500" /> Non-Earning KM
-            </span>
-            <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-black text-amber-500 font-mono">
-                {deadKm.toFixed(2)}
+          {/* Unpaid Dead Distance (Conditionally Hidden) */}
+          {activeProfile.showDeadKm && (
+            <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
+              <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
+                <MapPinOff className="w-4 h-4 text-amber-500" /> Non-Earning KM
               </span>
-              <span className="text-xs text-zinc-500 font-bold">KM</span>
+              <div className="flex items-baseline gap-1 pt-1">
+                <span className="text-3xl sm:text-4xl font-black text-amber-500 font-mono">
+                  {deadKm.toFixed(2)}
+                </span>
+                <span className="text-xs text-zinc-500 font-bold">KM</span>
+              </div>
+              <p className="text-[10px] text-amber-500/70">Without customer</p>
             </div>
-            <p className="text-[10px] text-amber-500/70">Without customer</p>
-          </div>
+          )}
 
           {/* Travel Duration */}
           <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
             <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <Timer className="w-4 h-4 text-emerald-400" /> Ride Time
+              <Timer className="w-4 h-4 text-emerald-400" /> {activeProfile.showDeadKm ? 'Ride Time' : 'Drive Time'}
             </span>
             <div className="pt-1">
               <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-100 block">
@@ -584,17 +600,27 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
             <p className="text-[10px] text-zinc-500">Time spent so far</p>
           </div>
 
-          {/* estimated fuel cost overlay */}
+          {/* estimated fuel cost / mileage overlay */}
           <div className="space-y-1 bg-zinc-900/40 p-3 rounded-lg border border-zinc-900">
             <span className="text-xs text-zinc-400 uppercase tracking-wide flex items-center gap-1 font-bold">
-              <Compass className="w-4 h-4 text-red-400" /> Fuel Cost
+              {activeProfile.id === 'Personal' ? (
+                <><Activity className="w-4 h-4 text-purple-400" /> Mileage</>
+              ) : (
+                <><Compass className="w-4 h-4 text-red-400" /> Fuel Cost</>
+              )}
             </span>
             <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-3xl sm:text-4xl font-black text-red-500 font-mono">
-                {currency}{estimatedFuelCost.toFixed(2)}
-              </span>
+              {activeProfile.id === 'Personal' ? (
+                <span className="text-3xl sm:text-4xl font-black text-purple-400 font-mono">
+                  {vehicle.mileage}
+                </span>
+              ) : (
+                <span className="text-3xl sm:text-4xl font-black text-red-500 font-mono">
+                  {currency}{estimatedFuelCost.toFixed(2)}
+                </span>
+              )}
             </div>
-            <p className="text-[10px] text-zinc-500">Calculated fuel loss</p>
+            <p className="text-[10px] text-zinc-500">{activeProfile.id === 'Personal' ? `${vehicle.fuelUnit} / KM` : 'Calculated fuel loss'}</p>
           </div>
         </div>
 
@@ -622,14 +648,14 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         
         <div className="flex flex-col gap-3">
           {!isTracking ? (
-            <button
-              onClick={handleStartTracking}
-              className="w-full py-6 bg-green-500 active:scale-95 text-black rounded-xl font-black text-2xl tracking-wide shadow-lg border-b-8 border-green-700 text-center flex items-center justify-center gap-2 cursor-pointer"
-              id="btn_start_tracking"
-            >
-              <Play className="w-8 h-8 fill-current" />
-              START NEW RIDE
-            </button>
+              <button
+                onClick={handleStartTracking}
+                className={`w-full py-6 bg-zinc-900 active:scale-95 text-zinc-100 rounded-xl font-black text-2xl tracking-wide shadow-lg border-b-8 border-zinc-950 text-center flex items-center justify-center gap-2 cursor-pointer transition-all hover:brightness-110 ${activeProfile.badgeClass}`}
+                id="btn_start_tracking"
+              >
+                <Play className="w-8 h-8 fill-current" />
+                START {activeProfile.name.toUpperCase()}
+              </button>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {/* Red Stop Button */}
@@ -656,37 +682,39 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
         </div>
 
         {/* ACTIVE CRUISE TACTILE TOGGLE (Dead KM Counter) */}
-        <div>
-          <button
-            disabled={!isTracking}
-            onClick={() => {
-              triggerClick();
-              setIsDeadKmMode(!isDeadKmMode);
-            }}
-            className={`w-full py-5 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
-              !isTracking
-                ? 'bg-zinc-950/40 border-zinc-900 text-zinc-700 cursor-not-allowed opacity-30'
-                : isDeadKmMode
-                  ? 'bg-amber-500 border-amber-600 text-black font-black shadow-md'
-                  : 'bg-zinc-900 hover:bg-zinc-850 border-zinc-800 text-zinc-300'
-            }`}
-            id="btn_dead_km_shunter"
-          >
-            {isDeadKmMode ? (
-              <>
-                <MapPinOff className="w-8 h-8 mb-1 text-black animate-bounce" />
-                <span className="text-base uppercase tracking-wider font-black">SEARCHING FOR CUSTOMER</span>
-                <span className="text-xs opacity-90 font-bold">(Counting Non-Earning KM now)</span>
-              </>
-            ) : (
-              <>
-                <UserCheck className="w-8 h-8 mb-1 text-green-400" />
-                <span className="text-base uppercase tracking-wider font-black">CUSTOMER IN CAB / BIKE</span>
-                <span className="text-xs text-zinc-500 font-bold">Tap when customer climbs on / ride starts</span>
-              </>
-            )}
-          </button>
-        </div>
+        {activeProfile.showDeadKm && (
+          <div>
+            <button
+              disabled={!isTracking}
+              onClick={() => {
+                triggerClick();
+                setIsDeadKmMode(!isDeadKmMode);
+              }}
+              className={`w-full py-5 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
+                !isTracking
+                  ? 'bg-zinc-950/40 border-zinc-900 text-zinc-700 cursor-not-allowed opacity-30'
+                  : isDeadKmMode
+                    ? 'bg-amber-500 border-amber-600 text-black font-black shadow-md'
+                    : 'bg-zinc-900 hover:bg-zinc-850 border-zinc-800 text-zinc-300'
+              }`}
+              id="btn_dead_km_shunter"
+            >
+              {isDeadKmMode ? (
+                <>
+                  <MapPinOff className="w-8 h-8 mb-1 text-black animate-bounce" />
+                  <span className="text-base uppercase tracking-wider font-black">SEARCHING FOR CUSTOMER</span>
+                  <span className="text-xs opacity-90 font-bold">(Counting Non-Earning KM now)</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck className={`w-8 h-8 mb-1 ${activeProfile.accentClass}`} />
+                  <span className="text-base uppercase tracking-wider font-black">CUSTOMER IN RIDE</span>
+                  <span className="text-xs text-zinc-500 font-bold">Tap when customer climbs on / ride starts</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Save Ride Modal Popup */}
@@ -695,27 +723,47 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
           <div className="bg-zinc-950 rounded-2xl p-5 max-w-md w-full shadow-2xl border border-zinc-900 space-y-4">
             <div className="flex justify-between items-center pb-2.5 border-b border-zinc-900">
               <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Car className="w-5 h-5 text-green-400" /> Save Ride Details
+                <activeProfile.icon className={`w-5 h-5 ${activeProfile.accentClass}`} /> Save Details
               </h3>
-              <span className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 px-2 py-0.5 rounded font-black uppercase">
-                {platform} App
+              <span className={`text-xs px-2 py-0.5 rounded font-black uppercase ${activeProfile.badgeClass}`}>
+                {activeProfile.name}
               </span>
             </div>
 
             <form onSubmit={handleSaveRide} className="space-y-4">
+              {/* Dynamic Ride Category */}
+              {activeProfile.showRideCategory && (
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                    {activeProfile.categoryLabel}
+                  </label>
+                  <select
+                    value={rideCategory}
+                    onChange={(e) => setRideCategory(e.target.value)}
+                    className="w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer"
+                  >
+                    {activeProfile.categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Distance Recap */}
               <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-3 rounded-xl border border-zinc-850 text-center">
                 <div>
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Earning KM</span>
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">{activeProfile.showDeadKm ? 'Earning KM' : 'Distance'}</span>
                   <p className="text-lg font-black text-white">{distanceKm.toFixed(2)} km</p>
                 </div>
-                <div>
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Non-Earning KM</span>
-                  <p className="text-lg font-black text-amber-500">{deadKm.toFixed(2)} km</p>
-                </div>
+                {activeProfile.showDeadKm && (
+                  <div>
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Non-Earning KM</span>
+                    <p className="text-lg font-black text-amber-500">{deadKm.toFixed(2)} km</p>
+                  </div>
+                )}
               </div>
 
-              {/* Earnings Input */}
+              {/* Earnings Input / Profile Specific Block */}
               <div className="space-y-1">
                 <label className="block text-xs font-black text-zinc-400 uppercase tracking-wider">
                   Money you got for this Ride ({currency})
@@ -728,17 +776,17 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                     type="number"
                     step="any"
                     required
-                    disabled={platform === 'Personal'}
-                    value={platform === 'Personal' ? '0' : finalEarnings}
+                    disabled={!activeProfile.showEarnings}
+                    value={!activeProfile.showEarnings ? '0' : finalEarnings}
                     onChange={(e) => setFinalEarnings(e.target.value)}
-                    className="pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`pl-9 block w-full rounded-xl bg-black border border-zinc-800 p-3 text-white text-2xl font-black font-mono focus:outline-none focus:border-${activeProfile.color.split('-')[0]}-500 disabled:opacity-50 disabled:cursor-not-allowed`}
                     placeholder="0.00"
-                    autoFocus={platform !== 'Personal'}
+                    autoFocus={activeProfile.showEarnings}
                   />
                 </div>
-                {platform === 'Personal' ? (
-                  <p className="text-xs text-amber-500 font-bold">
-                    Personal trip — earnings not applicable.
+                {!activeProfile.showEarnings ? (
+                  <p className={`text-xs ${activeProfile.accentClass} font-bold`}>
+                    Personal Trip. No commercial earnings.
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-500 font-bold">
@@ -747,93 +795,46 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                 )}
               </div>
 
-              {/* Ride Extras Options based on Platform */}
-              {platform === 'Cab Ride' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Tips ({currency})</label>
-                    <input type="number" step="any" value={cabTips} onChange={e => setCabTips(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Tolls ({currency})</label>
-                    <input type="number" step="any" value={cabTolls} onChange={e => setCabTolls(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
-                </div>
-              )}
-
-              {platform === 'Auto Ride' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Wait Time (Min)</label>
-                    <input type="number" step="any" value={autoWaitingTime} onChange={e => setAutoWaitingTime(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Fuel Type</label>
-                    <select value={autoFuelType} onChange={e => setAutoFuelType(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
-                      <option value="Petrol">Petrol</option>
-                      <option value="CNG">CNG</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {platform === 'Bike Ride' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Orders / Drops</label>
-                    <input type="number" step="1" value={bikeOrders} onChange={e => setBikeOrders(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Platform</label>
-                    <select value={bikePlatform} onChange={e => setBikePlatform(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
-                      <option value="Rapido">Rapido</option>
-                      <option value="Uber Moto">Uber Moto</option>
-                      <option value="Ola Bike">Ola Bike</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {platform === 'Delivery Ride' && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Orders</label>
-                      <input type="number" step="1" value={deliveryOrders} onChange={e => setDeliveryOrders(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
+              {/* Dynamic Fields generated strictly from Ride Profile Config */}
+              {activeProfile.dynamicFields.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  {activeProfile.dynamicFields.map(field => (
+                    <div key={field.id} className="space-y-1">
+                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">
+                        {field.label} {field.type === 'currency' ? `(${currency})` : ''}
+                      </label>
+                      {field.type === 'select' ? (
+                        <select
+                          value={dynamicFields[field.id] || ''}
+                          onChange={(e) => setDynamicFields(prev => ({ ...prev, [field.id]: e.target.value }))}
+                          className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer"
+                        >
+                          {field.options?.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            type={field.type === 'number' ? 'number' : 'text'}
+                            step={field.type === 'number' ? 'any' : undefined}
+                            value={dynamicFields[field.id] || ''}
+                            onChange={(e) => setDynamicFields(prev => ({ 
+                              ...prev, 
+                              [field.id]: field.type === 'number' ? (parseFloat(e.target.value) || e.target.value) : e.target.value 
+                            }))}
+                            placeholder={field.placeholder || "0"}
+                            className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none"
+                          />
+                          {field.suffix && (
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <span className="text-[10px] text-zinc-500 font-black uppercase">{field.suffix}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Platform</label>
-                      <select value={deliveryPlatform} onChange={e => setDeliveryPlatform(e.target.value)} className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none cursor-pointer">
-                        <option value="Swiggy">Swiggy</option>
-                        <option value="Zomato">Zomato</option>
-                        <option value="Blinkit">Blinkit</option>
-                        <option value="Porter">Porter</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Pickup Dist (KM)</label>
-                      <input type="number" step="any" value={deliveryPickup} onChange={e => setDeliveryPickup(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Drop Dist (KM)</label>
-                      <input type="number" step="any" value={deliveryDrop} onChange={e => setDeliveryDrop(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {platform === 'Personal' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Trip Purpose</label>
-                    <input type="text" value={personalPurpose} onChange={e => setPersonalPurpose(e.target.value)} placeholder="e.g. Groceries" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-wider">Trip Expense ({currency})</label>
-                    <input type="number" step="any" value={personalExpense} onChange={e => setPersonalExpense(e.target.value)} placeholder="0" className="block w-full rounded-xl bg-black border border-zinc-800 p-3 text-sm text-zinc-200 focus:outline-none" />
-                  </div>
+                  ))}
                 </div>
               )}
 
@@ -862,7 +863,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-green-500 text-black rounded-lg font-black text-xs cursor-pointer flex items-center justify-center gap-1 uppercase"
+                  className={`flex-1 py-3 bg-${activeProfile.color.split('-')[0]}-500 text-black rounded-lg font-black text-xs cursor-pointer flex items-center justify-center gap-1 uppercase hover:brightness-110`}
                 >
                   <Check className="w-4 h-4 text-black stroke-[3]" /> Save Ride
                 </button>
