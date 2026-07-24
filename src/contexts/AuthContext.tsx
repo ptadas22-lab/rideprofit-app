@@ -24,6 +24,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {}
 });
 
+const isDev = import.meta.env.DEV;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,16 +44,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    if (isDev) console.log('[Auth] Initializing Supabase session...');
+
+    // 1. Initial Session Check
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error && isDev) console.error('[Auth] getSession error:', error.message);
+      if (isDev) console.log('[Auth] getSession result:', session ? 'Session found' : 'No session');
+      
       setUser(mapSupabaseUser(session?.user ?? null));
       setIsLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(mapSupabaseUser(session?.user ?? null));
-      setIsLoading(false);
+    // 2. Listen for auth changes (including email callbacks)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (isDev) console.log(`[Auth] Event: ${event}`, session ? 'User present' : 'No user');
+
+      switch (event) {
+        case 'INITIAL_SESSION':
+        case 'SIGNED_IN':
+        case 'TOKEN_REFRESHED':
+        case 'USER_UPDATED':
+        case 'PASSWORD_RECOVERY':
+          setUser(mapSupabaseUser(session?.user ?? null));
+          setIsLoading(false);
+          break;
+        case 'SIGNED_OUT':
+          setUser(null);
+          setIsLoading(false);
+          break;
+        default:
+          break;
+      }
     });
 
     return () => {
@@ -60,10 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = async () => {
+    if (isDev) console.log('[Auth] User requested logout');
     setIsLoading(true);
-    await supabase.auth.signOut();
-    // After sign out, the onAuthStateChange listener will automatically set user to null
-    // However we keep the rides/vehicle in localStorage as requested (offline-first).
+    const { error } = await supabase.auth.signOut();
+    if (error && isDev) console.error('[Auth] Logout error:', error.message);
     setIsLoading(false);
   };
 

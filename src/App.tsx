@@ -26,6 +26,8 @@ import {
   Bell
 } from 'lucide-react';
 import { feedbackAudio, triggerHapticFeedback } from './utils/audio';
+import { useAuth } from './contexts/AuthContext';
+import { Sparkles } from 'lucide-react';
 
 const LOCAL_STORAGE_RIDES_KEY = 'rideprofit_rides_db';
 const LOCAL_STORAGE_VEHICLE_KEY = 'rideprofit_vehicle_db';
@@ -284,26 +286,44 @@ function AppContent() {
   );
 }
 
+const AuthWrapper: React.FC<{ children: React.ReactNode, fallback: React.ReactNode }> = ({ children, fallback }) => {
+  const { isLoading } = useAuth();
+  return isLoading ? <>{fallback}</> : <>{children}</>;
+};
+
 export default function App() {
+  const loadingScreen = (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center font-sans">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-gray-900 shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+          <Sparkles className="w-8 h-8" />
+        </div>
+        <p className="text-gray-400 font-black text-sm tracking-widest uppercase">Initializing Secure Session</p>
+      </div>
+    </div>
+  );
+
   return (
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/phone-login" element={<PhoneLoginPage />} />
-            <Route path="/verify-otp" element={<OtpVerificationPage />} />
-            
-            <Route path="/app" element={
-              <ProtectedRoute>
-                <AppContent />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<Navigate to="/app" replace />} />
-          </Routes>
+          <AuthWrapper fallback={loadingScreen}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/phone-login" element={<PhoneLoginPage />} />
+              <Route path="/verify-otp" element={<OtpVerificationPage />} />
+              
+              <Route path="/app" element={
+                <ProtectedRoute>
+                  <AppContent />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="*" element={<Navigate to="/app" replace />} />
+            </Routes>
+          </AuthWrapper>
         </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
