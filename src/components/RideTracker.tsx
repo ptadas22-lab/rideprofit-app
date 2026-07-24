@@ -59,6 +59,7 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
   // Real GPS feedback
   const [geoError, setGeoError] = useState<string | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const isInstagramBrowser = navigator.userAgent.toLowerCase().includes('instagram');
   const [gpsCoordinates, setGpsCoordinates] = useState<Array<{lat: number, lng: number}>>(() => {
     try {
       const saved = localStorage.getItem('rideprofit_active_gps_coordinates');
@@ -653,12 +654,38 @@ export default function RideTracker({ vehicle, currency, onRideLogged }: RideTra
             </div>
           )}
 
-          {geoError && (
+          {geoError && !isInstagramBrowser && (
             <div className="text-red-400 text-[12px] font-bold">
               <span>{geoError}</span>
             </div>
           )}
         </div>
+
+        {/* Instagram Browser Warning */}
+        {geoError && isInstagramBrowser && (
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-blue-400 shrink-0" />
+              <div>
+                <h4 className="text-[14px] font-black text-blue-400 uppercase tracking-wide">Open RideProfit in Chrome</h4>
+                <p className="text-[12px] text-gray-400 mt-1">Instagram's built-in browser may restrict GPS access. Open RideProfit in Chrome for accurate ride tracking.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const isAndroid = navigator.userAgent.toLowerCase().includes('android');
+                if (isAndroid) {
+                  window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+                } else {
+                  alert("Please tap the menu icon (...) in the top right corner and select 'Open in External Browser' or 'Open in System Browser'.");
+                }
+              }}
+              className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-[13px] transition-colors"
+            >
+              Open in Chrome
+            </button>
+          </div>
+        )}
 
         {/* Speed limit controls removed for production release */}
       </div>
